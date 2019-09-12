@@ -21,18 +21,14 @@ def handle_message(conn, message):
     if jumbo:
         handle_jumbo_message(conn, message)
         return
-    elif payload.startswith("b'"):
-        payload = payload[2:]
-        payload = payload[:-1]
-        p = payload.encode()
-        p58 = base58.b58decode(p)
-        ppickle = pickle.loads(p58)
-        print(f"Received a {type(ppickle)} message:")
-        print(ppickle)
+    # try base58 decode
+    try:
+        payload_bytes = base58.b58decode_check(payload)
+        print(payload_bytes.decode())
+    except ValueError:
+        pass
     else:
         print(payload)
-
-    # handle
 
 
 def handle_jumbo_message(conn, message):
