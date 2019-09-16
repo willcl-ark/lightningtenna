@@ -1,3 +1,4 @@
+
 import logging
 import threading
 import traceback
@@ -9,7 +10,7 @@ import goTenna
 
 from events import Events
 from messages import handle_message
-from utilities import cli, segment
+from utilities import cli, segment, rate_limit, naturalsize
 from config import CONFIG
 from trio_client import AsyncClient
 from trio_server import AsyncServer
@@ -61,6 +62,8 @@ class Connection:
                 target=self.socket.start, daemon=True
             )
             self.socket_thread.start()
+        self.bytes_sent = 0
+        self.bytes_received = 0
 
     def reset_connection(self):
         if self.api_thread:
@@ -107,6 +110,7 @@ class Connection:
         """
         if evt.event_type == goTenna.driver.Event.MESSAGE:
             self.events.msg.put(evt)
+
             try:
                 thread = threading.Thread(
                     target=handle_message, args=[self, evt.message]
@@ -224,6 +228,7 @@ class Connection:
         self._settings.gid_settings = gid
         self.log(f"GID: {self.api_thread.gid.gid_val}")
 
+    @rate_limit
     def send_broadcast(self, message):
         """ Send a broadcast message
         """
@@ -279,6 +284,8 @@ class Connection:
                 self.in_flight_events[
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
+                self.bytes_sent += len(message)
+                self.log(f"Total bytes sent: {naturalsize(self.bytes_sent)}")
             except ValueError:
                 self.log(
                     {
@@ -359,16 +366,21 @@ class Connection:
             gid.gid_val, message
         )
 
+    @rate_limit
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
         msg_segments = segment(message, segment_size)
         self.log(f"Created segmented message with {len(msg_segments)} segments")
+        if len(msg_segments) > 12:
+            print(f"Message of {len(msg_segments)} segments too long for jumbo send. "
+                  f"Not sending")
+            return
         if not private:
             i = 0
             for msg in msg_segments:
                 i += 1
                 sleep(2)
                 self.send_broadcast(msg)
-                self.log(f"Sent message segment {i} of {len(msg_segments)}")
+                # self.log(f"Sent message segment {i} of {len(msg_segments)}")
         return
         # disabled for now as requires custom message parsing
         # TODO: enable private messages here
@@ -448,3 +460,7 @@ class Connection:
             pprint(message)
         else:
             logger.debug(message)
+
+
+
+
