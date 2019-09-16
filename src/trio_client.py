@@ -3,11 +3,10 @@ import sys
 import trio
 
 from utilities import hexdump
-from connection import Connection
 
 
-HOST = "127.0.0.1"
-PORT = 19733
+HOST = "77.98.116.8"
+PORT = 9733
 MAGIC = "clight"
 
 
@@ -25,7 +24,7 @@ class AsyncClient:
                 data = self.queue.get()
                 final_data = MAGIC.encode() + data
                 print("sender: sending {!r}".format(final_data))
-                await self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+                self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
 
     async def receiver(self, client_stream):
         print("receiver: started!")
@@ -34,7 +33,7 @@ class AsyncClient:
             hexdump(data)
             final_data = MAGIC.encode() + data
             print("receiver: sending {!r}".format(final_data))
-            await self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+            self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
         print("receiver: connection closed")
         sys.exit()
 
@@ -52,9 +51,3 @@ class AsyncClient:
     def start(self):
         trio.run(self.parent)
 
-
-if __name__ == "__main__":
-    # debug line
-    conn = Connection()
-    client = AsyncClient(conn)
-    client.start()

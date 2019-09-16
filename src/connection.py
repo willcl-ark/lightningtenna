@@ -9,8 +9,9 @@ import goTenna
 from events import Events
 from messages import handle_message
 from utilities import cli, segment
-from gotenna_sockets import start_socket
 from config import CONFIG
+from trio_client import AsyncClient
+from trio_server import AsyncServer
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format=CONFIG["logging"]["FORMAT"])
@@ -27,7 +28,7 @@ SPI_READY = 27
 
 
 class Connection:
-    def __init__(self):  # host, port, listen):
+    def __init__(self, server=0):
         self.api_thread = None
         self.status = {}
         self.in_flight_events = {}
@@ -44,13 +45,21 @@ class Connection:
         self.gid = (None,)
         self.geo_region = None
         self.events = Events()
-        self.service_url = None
-        self.swap_payment_hash = None
-        self.swap_preimage = None
         self.gateway = 0
         self.jumbo_thread = threading.Thread()
         self.cli = False
-        # self.socket = start_socket(self, host, port, listen)
+        if server:
+            self.socket = AsyncServer(self)
+            self.socket_thread = threading.Thread(
+                    target=self.socket.start, daemon=True
+            )
+            self.socket_thread.start()
+        else:
+            self.socket = AsyncClient(self)
+            self.socket_thread = threading.Thread(
+                target=self.socket.start, daemon=True
+            )
+            self.socket_thread.start()
 
     def reset_connection(self):
         if self.api_thread:
