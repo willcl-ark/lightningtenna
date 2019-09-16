@@ -7,7 +7,7 @@ from utilities import hexdump
 
 HOST = "77.98.116.8"
 PORT = 9733
-MAGIC = "clight"
+MAGIC = b"clight"
 
 
 class AsyncClient:
@@ -15,39 +15,37 @@ class AsyncClient:
         self.conn = conn
         self.queue = conn.events.socket_queue
 
-    async def sender(self):
-        print("sender: started!")
+    async def sender(self, client_stream):
+        print("[GATEWAY] send channel: started!")
         while True:
             if self.queue.empty():
                 await trio.sleep(1)
             else:
                 data = self.queue.get()
-                final_data = MAGIC.encode() + data
-                print("sender: sending {!r}".format(final_data))
-                self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+                print("[GATEWAY] send channel: sending {!r}".format(data))
+                await client_stream.send_all(data)
 
     async def receiver(self, client_stream):
-        print("receiver: started!")
+        print("[GATEWAY] recv socket: started!")
         async for data in client_stream:
-            print("receiver: got data:")
+            print("[GATEWAY] recv socket: got data:")
             hexdump(data)
-            final_data = MAGIC.encode() + data
-            print("receiver: sending {!r}".format(final_data))
+            final_data = MAGIC + data
+            print("[GATEWAY] recv socket: sending {!r}".format(final_data))
             self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
-        print("receiver: connection closed")
+        print("[GATEWAY] recv socket: connection closed")
         sys.exit()
 
     async def parent(self):
-        print(f"parent: connecting to {HOST}:{PORT}")
+        print(f"[GATEWAY] parent: connecting to {HOST}:{PORT}")
         client_stream = await trio.open_tcp_stream(HOST, PORT)
         async with client_stream:
             async with trio.open_nursery() as nursery:
-                print("parent: spawning sender...")
-                nursery.start_soon(self.sender)
+                print("[GATEWAY] parent: spawning sender...")
+                nursery.start_soon(self.sender, client_stream)
 
-                print("parent: spawning receiver...")
+                print("[GATEWAY] parent: spawning [GATEWAY] recv socket...")
                 nursery.start_soon(self.receiver, client_stream)
 
     def start(self):
         trio.run(self.parent)
-

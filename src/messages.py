@@ -1,6 +1,5 @@
 import base58
 import threading
-import socket
 import types
 from time import sleep, time
 
@@ -8,7 +7,7 @@ from utilities import de_segment
 
 RHOST = "77.98.116.8"
 RPORT = 9733
-MAGIC = "clight"
+MAGIC = b"clight"
 
 
 def valid_base58check(data):
@@ -36,12 +35,12 @@ def handle_message(conn, message):
         return
     if valid_base58check(payload):
         try:
-            payload_str = base58.b58decode_check(payload).decode()
-            if payload_str.startswith(MAGIC):
+            payload_bytes = base58.b58decode_check(payload)
+            if payload_bytes.startswith(MAGIC):
                 print("magic message received!")
-                original_payload = payload_str[6:].encode()
+                original_payload = payload_bytes[6:]
                 conn.events.socket_queue.put(original_payload)
-            print(payload_str[:6])
+            print(payload_bytes[:6])
         except Exception as e:
             print(f"Error decoding data in handle_message:\n{e}")
     else:

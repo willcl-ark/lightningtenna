@@ -1,6 +1,7 @@
 import logging
 import threading
 import traceback
+import trio
 from pprint import pprint
 from time import sleep
 
@@ -51,7 +52,7 @@ class Connection:
         if server:
             self.socket = AsyncServer(self)
             self.socket_thread = threading.Thread(
-                    target=self.socket.start, daemon=True
+                    target=trio.run, args=[self.socket.start], daemon=True
             )
             self.socket_thread.start()
         else:
