@@ -8,6 +8,7 @@ from utilities import hexdump
 HOST = "77.98.116.8"
 PORT = 9733
 MAGIC = b"clight"
+MAX_SIZE = 2500
 
 
 class AsyncClient:
@@ -29,10 +30,13 @@ class AsyncClient:
         print("[GATEWAY] recv socket: started!")
         async for data in client_stream:
             print("[GATEWAY] recv socket: got data:")
-            hexdump(data)
-            final_data = MAGIC + data
-            print("[GATEWAY] recv socket: sending {!r}".format(final_data))
-            self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+            if len(data) < MAX_SIZE:
+                hexdump(data)
+                final_data = MAGIC + data
+                print("[GATEWAY] recv socket: sending {!r}".format(final_data))
+                self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+        else:
+            print("Data too large, discarding")
         print("[GATEWAY] recv socket: connection closed")
         sys.exit()
 

@@ -8,6 +8,7 @@ from utilities import hexdump
 HOST = "127.0.0.1"
 PORT = 9733
 MAGIC = b"clight"
+MAX_SIZE = 2500
 
 CONNECTION_COUNTER = count()
 
@@ -30,10 +31,13 @@ class AsyncServer:
         print("[MESH] recv socket: started!")
         async for data in server_stream:
             print(f"[MESH] recv socket: got data len({len(data)}): {data}")
-            hexdump(data)
-            final_data = MAGIC + data
-            print(f"[MESH] recv socket: sending {final_data}")
-            self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+            if len(data) < MAX_SIZE:
+                hexdump(data)
+                final_data = MAGIC + data
+                print(f"[MESH] recv socket: sending {final_data}")
+                self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+            else:
+                print("Data too large, discarding")
         print("[MESH] recv socket: connection closed")
         sys.exit()
 
