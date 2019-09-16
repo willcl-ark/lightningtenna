@@ -1,3 +1,4 @@
+import functools
 import simplejson as json
 import logging
 import time
@@ -9,20 +10,21 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format=CONFIG["logging"]["FORMAT"])
 
 MSG_TYPE = {2: "BROADCAST", 3: "EMERGENCY", 1: "GROUP", 0: "PRIVATE"}
+SEND_TIMES = []
 
 
 def hexdump(data, length=16):
-    filter = ''.join(
-            [(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
+    filter = "".join([(len(repr(chr(x))) == 3) and chr(x) or "." for x in range(256)])
     lines = []
     digits = 4 if isinstance(data, str) else 2
     for c in range(0, len(data), length):
-        chars = data[c:c + length]
-        hex = ' '.join(["%0*x" % (digits, (x)) for x in chars])
-        printable = ''.join(
-                ["%s" % (((x) <= 127 and filter[(x)]) or '.') for x in chars])
+        chars = data[c : c + length]
+        hex = " ".join(["%0*x" % (digits, (x)) for x in chars])
+        printable = "".join(
+            ["%s" % (((x) <= 127 and filter[(x)]) or ".") for x in chars]
+        )
         lines.append("%04x  %-*s  %s\n" % (c, length * 3, hex, printable))
-    print(''.join(lines))
+    print("".join(lines))
 
 
 def handle_event(evt):
@@ -98,6 +100,30 @@ def cli(func):
     return if_cli
 
 
+def rate_limit(func):
+    @functools.wraps(func)
+    def limit(*args, **kwargs):
+        # if we've not sent 5, continue
+        if len(SEND_TIMES) < 5:
+            pass
+        # if our 5th oldest is older than 60 seconds ago, continue
+        elif SEND_TIMES[-5] < (time.time() - 60):
+            pass
+        # else pause for the required amount of time
+        else:
+            wait = 60 - (time.time() - SEND_TIMES[-5])
+            print(f"Waiting for {round(wait + 1, 0)} seconds due to rate limiting")
+            time.sleep(wait + 1)
+
+        # add this send to the send_list
+        SEND_TIMES.append(time.time())
+
+        # make the send
+        return func(*args, **kwargs)
+
+    return limit
+
+
 def segment(msg, segment_size: int):
     """
     :param msg: string or json-compatible object
@@ -121,7 +147,7 @@ def segment(msg, segment_size: int):
     msg_list = []
     for i in range(0, msg_length, segment_size):
         header = f"{prefix}/{(i // segment_size) + 1}/{num_segments}/"
-        msg_list.append(header + msg[i: i + segment_size])
+        msg_list.append(header + msg[i : i + segment_size])
     return msg_list
 
 
@@ -150,3 +176,39 @@ def log(message, cli):
     else:
         logger.debug(message)
 
+
+suffixes = {
+    "decimal": ("kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"),
+    "binary": ("KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"),
+    "gnu": "KMGTPEZY",
+}
+
+
+def naturalsize(value, binary=False, gnu=False, format="%.1f"):
+
+    if gnu:
+        suffix = suffixes["gnu"]
+    elif binary:
+        suffix = suffixes["binary"]
+    else:
+        suffix = suffixes["decimal"]
+
+    base = 1024 if (gnu or binary) else 1000
+    bytes = float(value)
+
+    if bytes == 1 and not gnu:
+        return "1 Byte"
+    elif bytes < base and not gnu:
+        return "%d Bytes" % bytes
+    elif bytes < base and gnu:
+        return "%dB" % bytes
+
+    for i, s in enumerate(suffix):
+        unit = base ** (i + 2)
+        if bytes < unit and not gnu:
+            return (format + " %s") % ((base * bytes / unit), s)
+        elif bytes < unit and gnu:
+            return (format + "%s") % ((base * bytes / unit), s)
+    if gnu:
+        return (format + "%s") % ((base * bytes / unit), s)
+    return (format + " %s") % ((base * bytes / unit), s)
