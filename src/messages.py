@@ -3,7 +3,7 @@ import threading
 import types
 from time import sleep, time
 
-from utilities import de_segment
+from utilities import de_segment, naturalsize
 
 RHOST = "77.98.116.8"
 RPORT = 9733
@@ -34,6 +34,8 @@ def handle_message(conn, message):
         handle_jumbo_message(conn, message)
         return
     if valid_base58check(payload):
+        conn.bytes_received += len(payload)
+        conn.log(f"Total bytes received: {naturalsize(conn.bytes_received)}")
         try:
             payload_bytes = base58.b58decode_check(payload)
             if payload_bytes.startswith(MAGIC):
@@ -66,15 +68,15 @@ def handle_jumbo_message(conn, message):
     return
 
 
-def monitor_jumbo_msgs(conn, timeout=30):
+def monitor_jumbo_msgs(conn, timeout=210):
     conn.log("Starting jumbo message monitor thread")
     start = time()
     missing = True
     while True and time() < start + timeout:
-        conn.log(
-            f"received: {len(conn.events.jumbo)} of {conn.events.jumbo_len} "
-            f"jumbo messages"
-        )
+        # conn.log(
+        #     f"received: {len(conn.events.jumbo)} of {conn.events.jumbo_len} "
+        #     f"jumbo messages"
+        # )
         if (
             len(conn.events.jumbo) == int(conn.events.jumbo_len)
             and len(conn.events.jumbo) is not 0
@@ -89,7 +91,7 @@ def monitor_jumbo_msgs(conn, timeout=30):
             conn.log(f"Jumbo message payload reconstituted")
             handle_message(conn, jumbo_message)
             break
-        sleep(5)
+        sleep(0.2)
     # reset jumbo events after timeout
     conn.events.init_jumbo()
     if missing:
