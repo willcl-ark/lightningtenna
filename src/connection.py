@@ -9,6 +9,7 @@ import goTenna
 from events import Events
 from messages import handle_message
 from utilities import cli, segment
+from gotenna_sockets import start_socket
 from config import CONFIG
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ SPI_READY = 27
 
 
 class Connection:
-    def __init__(self):
+    def __init__(self):  # host, port, listen):
         self.api_thread = None
         self.status = {}
         self.in_flight_events = {}
@@ -49,6 +50,7 @@ class Connection:
         self.gateway = 0
         self.jumbo_thread = threading.Thread()
         self.cli = False
+        # self.socket = start_socket(self, host, port, listen)
 
     def reset_connection(self):
         if self.api_thread:

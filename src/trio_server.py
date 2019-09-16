@@ -1,17 +1,19 @@
 import base58
 import sys
 import trio
+from itertools import count
 
 from utilities import hexdump
 from connection import Connection
-
 
 HOST = "127.0.0.1"
 PORT = 19733
 MAGIC = "clight"
 
+CONNECTION_COUNTER = count()
 
-class AsyncClient:
+
+class AsyncServer:
     def __init__(self, conn):
         self.conn = conn
         self.queue = conn.events.socket_queue
@@ -25,7 +27,9 @@ class AsyncClient:
                 data = self.queue.get()
                 final_data = MAGIC.encode() + data
                 print("sender: sending {!r}".format(final_data))
-                await self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+                await self.conn.send_jumbo(
+                    (base58.b58encode_check(final_data)).decode()
+                )
 
     async def receiver(self, client_stream):
         print("receiver: started!")
@@ -40,14 +44,15 @@ class AsyncClient:
 
     async def parent(self):
         print(f"parent: connecting to {HOST}:{PORT}")
-        client_stream = await trio.open_tcp_stream(HOST, PORT)
-        async with client_stream:
-            async with trio.open_nursery() as nursery:
-                print("parent: spawning sender...")
-                nursery.start_soon(self.sender)
+        # listen for incoming TCP connections
+        listeners = await trio.open_tcp_listeners(PORT)
+        async with trio.open_nursery() as nursery:
+            print("parent: spawning sender...")
+            nursery.start_soon(self.sender)
 
-                print("parent: spawning receiver...")
-                nursery.start_soon(self.receiver, client_stream)
+            print("parent: spawning receiver...")
+            # for each new connection start a new task and run self.receiver
+            await trio.serve_listeners(self.receiver, listeners)
 
     def start(self):
         trio.run(self.parent)
@@ -56,5 +61,5 @@ class AsyncClient:
 if __name__ == "__main__":
     # debug line
     conn = Connection()
-    client = AsyncClient(conn)
+    client = AsyncServer(conn)
     client.start()

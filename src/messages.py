@@ -1,10 +1,23 @@
 import base58
-import pickle
 import threading
+import socket
 import types
 from time import sleep, time
 
 from utilities import de_segment
+
+RHOST = "77.98.116.8"
+RPORT = 9733
+MAGIC = "clight"
+
+
+def valid_base58check(data):
+    try:
+        base58.b58decode_check(data)
+        print("Base58 encoded data detected")
+        return True
+    except Exception:
+        return False
 
 
 def handle_message(conn, message):
@@ -21,12 +34,16 @@ def handle_message(conn, message):
     if jumbo:
         handle_jumbo_message(conn, message)
         return
-    # try base58 decode
-    try:
-        payload_bytes = base58.b58decode_check(payload)
-        print(payload_bytes.decode())
-    except ValueError:
-        pass
+    if valid_base58check(payload):
+        try:
+            payload_str = base58.b58decode_check(payload).decode()
+            if payload_str.startswith(MAGIC):
+                print("magic message received!")
+                original_payload = payload_str[6:].encode()
+                conn.events.socket_queue.put(original_payload)
+            print(payload_str[:6])
+        except Exception as e:
+            print(f"Error decoding data in handle_message:\n{e}")
     else:
         print(payload)
 

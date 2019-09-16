@@ -21,6 +21,8 @@ class Events:
         self.callback._name = "callback_events"
         self.jumbo = []
         self.jumbo_len = 0
+        self.socket_queue = queue.Queue()
+
 
     def get_all_connection(self):
         """Get all connect, disconnect and device present messages
