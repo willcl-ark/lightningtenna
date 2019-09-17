@@ -7,7 +7,7 @@ from utilities import hexdump
 
 
 HOST = CONFIG["lightning"]["REMOTE_PEER_IP"]
-PORT = 9733
+PORT = CONFIG["lightning"]["REMOTE_PEER_PORT"]
 MAGIC = b"clight"
 MAX_SIZE = 1800
 
