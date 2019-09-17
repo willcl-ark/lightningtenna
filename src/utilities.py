@@ -185,7 +185,9 @@ suffixes = {
 
 
 def naturalsize(value, binary=False, gnu=False, format="%.1f"):
-
+    """
+    https://github.com/jmoiron/humanize.git
+    """
     if gnu:
         suffix = suffixes["gnu"]
     elif binary:
