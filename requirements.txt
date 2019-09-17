@@ -1,0 +1,3 @@
+base58
+https://github.com/gotenna/PublicSDK/raw/master/python-public-sdk/goTenna-0.12.5-py3-none-any.whl
+trio
