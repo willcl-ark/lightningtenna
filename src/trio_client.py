@@ -38,6 +38,7 @@ class AsyncClient:
         else:
             print("Data too large, discarding")
         print("[GATEWAY] recv socket: connection closed")
+        # TODO: need to refactor so that connection will be retried if lost
         sys.exit()
 
     async def parent(self):
