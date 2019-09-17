@@ -2,10 +2,11 @@ import base58
 import sys
 import trio
 
+from config import CONFIG
 from utilities import hexdump
 
 
-HOST = "77.98.116.8"
+HOST = CONFIG["lightning"]["REMOTE_PEER_IP"]
 PORT = 9733
 MAGIC = b"clight"
 MAX_SIZE = 1800

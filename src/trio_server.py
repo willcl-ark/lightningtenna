@@ -1,5 +1,4 @@
 import base58
-import sys
 import trio
 from itertools import count
 
