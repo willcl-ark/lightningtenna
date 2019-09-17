@@ -46,15 +46,17 @@ class AsyncServer:
             else:
                 print("Data too large, discarding")
         print("[MESH] recv socket: connection closed")
-        sys.exit()
 
-    async def echo_server(self, server_stream):
+    async def server(self, server_stream):
         ident = next(CONNECTION_COUNTER)
-        print("echo_server {}: started".format(ident))
-        async with server_stream:
-            async with trio.open_nursery() as nursery:
-                nursery.start_soon(self.sender, server_stream)
-                nursery.start_soon(self.receiver, server_stream)
+        print("server {}: started".format(ident))
+        try:
+            async with server_stream:
+                async with trio.open_nursery() as nursery:
+                    nursery.start_soon(self.sender, server_stream)
+                    nursery.start_soon(self.receiver, server_stream)
+        except Exception as exc:
+            print("echo_server {}: crashed: {!r}".format(ident, exc))
 
     async def start(self):
         # for each new connection to PORT, start a new "server" process
