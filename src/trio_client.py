@@ -8,7 +8,7 @@ from utilities import hexdump
 HOST = "77.98.116.8"
 PORT = 9733
 MAGIC = b"clight"
-MAX_SIZE = 2500
+MAX_SIZE = 1800
 
 
 class AsyncClient:

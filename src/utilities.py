@@ -1,8 +1,10 @@
 import functools
-import simplejson as json
 import logging
+import sys
 import time
 from pprint import pprint
+
+import simplejson as json
 
 from config import CONFIG
 
@@ -100,6 +102,18 @@ def cli(func):
     return if_cli
 
 
+def print_timer(length, interval=1):
+    for remaining in range(length, 0, interval * -1):
+        sys.stdout.write("\r")
+        sys.stdout.write(
+            "Waiting for {:2d} seconds due to bandwidth restrictions.".format(remaining)
+        )
+        sys.stdout.flush()
+        time.sleep(1)
+
+    sys.stdout.write("\rComplete!                                                   \n")
+
+
 def rate_limit(func):
     @functools.wraps(func)
     def limit(*args, **kwargs):
@@ -111,9 +125,8 @@ def rate_limit(func):
             pass
         # else pause for the required amount of time
         else:
-            wait = 60 - (time.time() - SEND_TIMES[-5])
-            print(f"Waiting for {round(wait + 1, 0)} seconds due to rate limiting")
-            time.sleep(wait + 1)
+            wait = int(60 - (time.time() - SEND_TIMES[-5])) + 1
+            print_timer(wait)
 
         # add this send to the send_list
         SEND_TIMES.append(time.time())
