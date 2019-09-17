@@ -26,7 +26,7 @@ def hexdump(data, length=16):
             ["%s" % (((x) <= 127 and filter[(x)]) or ".") for x in chars]
         )
         lines.append("%04x  %-*s  %s\n" % (c, length * 3, hex, printable))
-    print("".join(lines))
+    print("\n" + "".join(lines))
 
 
 def handle_event(evt):
@@ -197,7 +197,7 @@ suffixes = {
 }
 
 
-def naturalsize(value, binary=False, gnu=False, format="%.1f"):
+def naturalsize(value, binary=False, gnu=True, format="%.1f"):
     """
     https://github.com/jmoiron/humanize.git
     """

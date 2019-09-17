@@ -2,7 +2,7 @@ import base58
 import trio
 from itertools import count
 
-from utilities import hexdump
+from utilities import hexdump, naturalsize
 
 HOST = "127.0.0.1"
 PORT = 9733
@@ -27,6 +27,7 @@ class AsyncServer:
                 await trio.sleep(1)
             else:
                 data = self.queue.get()
+                print(f"[MESH] sender: sending {naturalsize(len(data))} via socket")
                 await server_stream.send_all(data)
 
     async def receiver(self, server_stream):
@@ -34,12 +35,12 @@ class AsyncServer:
         """
         print("[MESH] recv socket: started!")
         async for data in server_stream:
-            print(f"[MESH] recv socket: got data len({len(data)}): {data}")
+            print(f"[MESH] recv socket: received {naturalsize(len(data))} of data.")
             # throw message away if too large
             if len(data) < MAX_SIZE:
                 hexdump(data)
                 final_data = MAGIC + data
-                print(f"[MESH] recv socket: sending {final_data}")
+                print(f"[MESH] recv socket: sending data to mesh network")
                 # send data received from the socket out of band
                 self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
             else:

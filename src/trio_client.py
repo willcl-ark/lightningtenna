@@ -3,11 +3,11 @@ import sys
 import trio
 
 from config import CONFIG
-from utilities import hexdump
+from utilities import hexdump, naturalsize
 
 
 HOST = CONFIG["lightning"]["REMOTE_PEER_IP"]
-PORT = CONFIG["lightning"]["REMOTE_PEER_PORT"]
+PORT = int(CONFIG["lightning"]["REMOTE_PEER_PORT"])
 MAGIC = b"clight"
 MAX_SIZE = 1800
 
@@ -24,7 +24,7 @@ class AsyncClient:
                 await trio.sleep(1)
             else:
                 data = self.queue.get()
-                print("[GATEWAY] send channel: sending {!r}".format(data))
+                print(f"[GATEWAY] send channel: sending {naturalsize(len(data))}")
                 await client_stream.send_all(data)
 
     async def receiver(self, client_stream):
@@ -34,7 +34,7 @@ class AsyncClient:
             if len(data) < MAX_SIZE:
                 hexdump(data)
                 final_data = MAGIC + data
-                print("[GATEWAY] recv socket: sending {!r}".format(final_data))
+                print("[GATEWAY] recv socket: sending data to mesh network")
                 self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
         else:
             print("Data too large, discarding")
