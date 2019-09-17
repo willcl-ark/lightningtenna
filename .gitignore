@@ -240,3 +240,4 @@ dmypy.json
 # goTenna cookie
 .goTenna
 src/.goTenna
+/src/archive/
