@@ -163,6 +163,9 @@ def segment(msg, segment_size: int):
         msg_list.append(header + msg[i : i + segment_size])
     return msg_list
 
+def sort_segment(val):
+    a, b, c, msg = val.split("/")
+    return int(b)
 
 def de_segment(segment_list: list):
     """
@@ -173,7 +176,7 @@ def de_segment(segment_list: list):
     for i in segment_list:
         if not i.startswith("sm/"):
             del segment_list[i]
-    segment_list.sort()
+    segment_list.sort(key=sort_segment)
 
     # remove the header and compile result
     result = ""
