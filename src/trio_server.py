@@ -1,4 +1,5 @@
 import base58
+import hashlib
 import trio
 from itertools import count
 
@@ -28,6 +29,7 @@ class AsyncServer:
             else:
                 data = self.queue.get()
                 print(f"[MESH] sender: sending {naturalsize(len(data))} via socket")
+                print(f"SHA256: {hashlib.sha256(data).hexdigest()}")
                 await server_stream.send_all(data)
 
     async def receiver(self, server_stream):
@@ -39,12 +41,13 @@ class AsyncServer:
             # throw message away if too large
             if len(data) < MAX_SIZE:
                 hexdump(data)
+                print(f"SHA256: {hashlib.sha256(data).hexdigest()}")
                 final_data = MAGIC + data
                 print(f"[MESH] recv socket: sending data to mesh network")
                 # send data received from the socket out of band
                 self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
             else:
-                print("Data too large, discarding")
+                print(f"Data too large: {len(data)} discarding")
         print("[MESH] recv socket: connection closed")
 
     async def server(self, server_stream):

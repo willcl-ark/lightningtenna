@@ -1,5 +1,6 @@
 import base58
 import sys
+import hashlib
 import trio
 
 from config import CONFIG
@@ -25,6 +26,7 @@ class AsyncClient:
             else:
                 data = self.queue.get()
                 print(f"[GATEWAY] send channel: sending {naturalsize(len(data))}")
+                print(f"SHA256: {hashlib.sha256(data).hexdigest()}")
                 await client_stream.send_all(data)
 
     async def receiver(self, client_stream):
@@ -33,11 +35,12 @@ class AsyncClient:
             print("[GATEWAY] recv socket: got data:")
             if len(data) < MAX_SIZE:
                 hexdump(data)
+                print(f"SHA256: {hashlib.sha256(data).hexdigest()}")
                 final_data = MAGIC + data
                 print("[GATEWAY] recv socket: sending data to mesh network")
                 self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
         else:
-            print("Data too large, discarding")
+            print(f"Data too large: {len(data)}, discarding")
         print("[GATEWAY] recv socket: connection closed")
         # TODO: need to refactor so that connection will be retried if lost
         sys.exit()
