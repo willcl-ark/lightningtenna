@@ -1,9 +1,7 @@
-import base58
 import select
 import socket
 import queue
 import time
-import threading
 
 from utilities import hexdump, print_timer, naturalsize
 
@@ -15,28 +13,6 @@ REMOTE_PORT = 9733
 
 ART_DELAY = 13
 
-
-import time
-from config import CONFIG
-from connection import Connection
-
-
-c = Connection(server=1)
-c.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
-c.set_gid(int(CONFIG["gotenna"]["DEBUG_GID"]))
-c.set_geo_region(int(CONFIG["gotenna"]["GEO_REGION"]))
-
-
-def mesh_auto_send(conn):
-    while True:
-        if not conn.events.send_via_mesh.empty():
-            conn.send_broadcast(base58.b58encode_check(conn.events.send_via_mesh.get()).decode())
-        else:
-            time.sleep(0.5)
-
-
-mesh_send_thread = threading.Thread(target=mesh_auto_send, args=[c])
-mesh_send_thread.start()
 
 inputs = []
 outputs = []
@@ -87,7 +63,6 @@ while inputs:
                 hexdump(data)
                 if s is local:
                     message_queues[remote].put(data)
-                    c.events.send_via_mesh.put(data)
                 else:
                     message_queues[local].put(data)
                 if s not in outputs:

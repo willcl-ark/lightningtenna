@@ -41,7 +41,7 @@ def handle_message(conn, message):
             if payload_bytes.startswith(MAGIC):
                 print("magic message received!")
                 original_payload = payload_bytes[6:]
-                conn.events.socket_queue.put(original_payload)
+                conn.events.send_via_socket.put(original_payload)
             print(payload_bytes[:6])
         except Exception as e:
             print(f"Error decoding data in handle_message:\n{e}")

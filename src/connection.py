@@ -50,18 +50,18 @@ class Connection:
         self.gateway = 0
         self.jumbo_thread = threading.Thread()
         self.cli = False
-        if server:
-            self.socket = AsyncServer(self)
-            self.socket_thread = threading.Thread(
-                    target=trio.run, args=[self.socket.start], daemon=True
-            )
-            self.socket_thread.start()
-        else:
-            self.socket = AsyncClient(self)
-            self.socket_thread = threading.Thread(
-                target=self.socket.start, daemon=True
-            )
-            self.socket_thread.start()
+        # if server:
+        #     self.socket = AsyncServer(self)
+        #     self.socket_thread = threading.Thread(
+        #             target=trio.run, args=[self.socket.start], daemon=True
+        #     )
+        #     self.socket_thread.start()
+        # else:
+        # self.socket = AsyncClient(self)
+        # self.socket_thread = threading.Thread(
+        #     target=self.socket.start, daemon=True
+        # )
+        # self.socket_thread.start()
         self.bytes_sent = 0
         self.bytes_received = 0
 

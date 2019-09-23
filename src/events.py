@@ -21,7 +21,8 @@ class Events:
         self.callback._name = "callback_events"
         self.jumbo = []
         self.jumbo_len = 0
-        self.socket_queue = queue.Queue()
+        self.send_via_socket = None
+        self.send_via_mesh = queue.Queue()
 
 
     def get_all_connection(self):
