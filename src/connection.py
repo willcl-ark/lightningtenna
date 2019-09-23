@@ -150,7 +150,7 @@ class Connection:
             )
             self.events.group_create.put(evt)
 
-    def build_callback(self, error_handler=None):
+    def build_callback(self, error_handler=None, binary=False):
         """ Build a callback for sending to the API thread. May specify a callable
         error_handler(details) taking the error details from the callback.
         The handler should return a string.
@@ -172,32 +172,33 @@ class Connection:
         captured_error_handler = [error_handler]
 
         def callback(
-            correlation_id, success=None, results=None, error=None, details=None
+            correlation_id, success=None, results=None, error=None, details=None, binary=False
         ):
             """ The default callback to pass to the API.
             See the documentation for ``goTenna.driver``.
             Does nothing but print whether the method succeeded or failed.
             """
             method = self.in_flight_events.pop(correlation_id.bytes, "Method call")
-            if success:
-                if results:
-                    result = {"method": method, "results": results, "status": "Success"}
-                    self.events.callback.put(result)
-                    self.log(result)
-                else:
-                    result = {"method": method, "status": "success"}
-                    self.events.callback.put(result)
-                    self.log(result)
-            elif error:
-                if not captured_error_handler[0]:
-                    captured_error_handler[0] = default_error_handler
-                    result = {
-                        "method": method,
-                        "error_details": captured_error_handler[0](details),
-                        "status": "failed",
-                    }
-                    self.events.callback.put(result)
-                    self.log(result)
+            if not binary:
+                if success:
+                    if results:
+                        result = {"method": method, "results": results, "status": "Success"}
+                        self.events.callback.put(result)
+                        self.log(result)
+                    else:
+                        result = {"method": method, "status": "success"}
+                        self.events.callback.put(result)
+                        self.log(result)
+                elif error:
+                    if not captured_error_handler[0]:
+                        captured_error_handler[0] = default_error_handler
+                        result = {
+                            "method": method,
+                            "error_details": captured_error_handler[0](details),
+                            "status": "failed",
+                        }
+                        self.events.callback.put(result)
+                        self.log(result)
 
         return callback
 
@@ -256,10 +257,11 @@ class Connection:
                 )
 
             try:
-                method_callback = self.build_callback(error_handler)
                 if binary:
+                    method_callback = self.build_callback(error_handler, binary=True)
                     payload = goTenna.payload.BinaryPayload(message)
                 else:
+                    method_callback = self.build_callback(error_handler)
                     payload = goTenna.payload.TextPayload(message)
                 # self.log(
                 #     f"payload valid = {payload.valid}, message size = {len(message)}\n"
