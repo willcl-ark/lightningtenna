@@ -28,7 +28,7 @@ SPI_READY = 27
 
 
 class Connection:
-    def __init__(self, server=0):
+    def __init__(self):
         self.api_thread = None
         self.status = {}
         self.in_flight_events = {}
