@@ -1,5 +1,4 @@
 import base58
-import sys
 import hashlib
 import trio
 
@@ -42,8 +41,6 @@ class AsyncClient:
         else:
             print(f"Data too large: {len(data)}, discarding")
         print("[GATEWAY] recv socket: connection closed")
-        # TODO: need to refactor so that connection will be retried if lost
-        sys.exit()
 
     async def parent(self):
         print(f"[GATEWAY] parent: connecting to {HOST}:{PORT}")
@@ -57,4 +54,8 @@ class AsyncClient:
                 nursery.start_soon(self.receiver, client_stream)
 
     def start(self):
-        trio.run(self.parent)
+        while True:
+            try:
+                trio.run(self.parent)
+            except Exception:
+                pass

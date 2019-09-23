@@ -366,7 +366,6 @@ class Connection:
             gid.gid_val, message
         )
 
-    @rate_limit
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
         msg_segments = segment(message, segment_size)
         self.log(f"Created segmented message with {len(msg_segments)} segments")

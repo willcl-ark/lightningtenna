@@ -42,10 +42,13 @@ class AsyncServer:
             if len(data) < MAX_SIZE:
                 hexdump(data)
                 print(f"SHA256: {hashlib.sha256(data).hexdigest()}")
-                final_data = MAGIC + data
+                final_data = base58.b58encode_check(MAGIC + data).decode()
                 print(f"[MESH] recv socket: sending data to mesh network")
                 # send data received from the socket out of band
-                self.conn.send_jumbo((base58.b58encode_check(final_data)).decode())
+                if len(final_data) < 210:
+                    self.conn.send_broadcast(final_data)
+                else:
+                    self.conn.send_jumbo(final_data)
             else:
                 print(f"Data too large: {len(data)} discarding")
         print("[MESH] recv socket: connection closed")

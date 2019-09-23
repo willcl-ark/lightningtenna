@@ -137,6 +137,23 @@ def rate_limit(func):
     return limit
 
 
+def rate_limit2(func):
+    @functools.wraps(func)
+    def limit(*args, **kwargs):
+        if len(SEND_TIMES) == 0:
+            pass
+        else:
+            wait = int((SEND_TIMES[-1] + 12) - time.time()) + 1
+            print_timer(wait)
+
+        # add this send to the send_list
+        SEND_TIMES.append(time.time())
+
+        return func(*args, **kwargs)
+
+    return limit
+
+
 def segment(msg, segment_size: int):
     """
     :param msg: string or json-compatible object
@@ -164,6 +181,11 @@ def segment(msg, segment_size: int):
     return msg_list
 
 
+def sort_segment(val):
+    a, b, c, msg = val.split("/")
+    return int(b)
+
+
 def de_segment(segment_list: list):
     """
     :param segment_list: a list of prefixed strings
@@ -173,7 +195,7 @@ def de_segment(segment_list: list):
     for i in segment_list:
         if not i.startswith("sm/"):
             del segment_list[i]
-    segment_list.sort()
+    segment_list.sort(key=sort_segment)
 
     # remove the header and compile result
     result = ""
