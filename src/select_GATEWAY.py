@@ -1,27 +1,19 @@
 import queue
 import select
 import socket
-import threading
 
 from config import CONFIG
 from gotenna_connections import setup_gotenna_conn
-from utilities import hexdump, naturalsize, mesh_auto_send
+from utilities import hexdump, naturalsize
 
 
 gateway_conn = setup_gotenna_conn(name="GATEWAY", gateway=1)
-
-# thread which will run auto-send
-gateway_send_thread = threading.Thread(
-    target=mesh_auto_send, args=[gateway_conn, "GATEWAY"]
-)
-gateway_send_thread.start()
 
 # inputs, outputs and queues for select
 inputs = []
 outputs = []
 message_queues = {}
 
-#
 # remote setup -- will create an outbound socket to remote C-Lightning node and add it
 # to select
 remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

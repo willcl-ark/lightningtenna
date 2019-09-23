@@ -1,19 +1,14 @@
 import queue
 import select
 import socket
-import threading
 import time
 
 from config import CONFIG
 from gotenna_connections import setup_gotenna_conn
-from utilities import hexdump, mesh_auto_send, naturalsize
+from utilities import hexdump, naturalsize
 
 
 mesh_conn = setup_gotenna_conn(name="MESH")
-
-# thread which will run auto-send
-mesh_send_thread = threading.Thread(target=mesh_auto_send, args=[mesh_conn, "MESH"])
-mesh_send_thread.start()
 
 # inputs, outputs and queues for select
 inputs = []

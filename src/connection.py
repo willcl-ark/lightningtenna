@@ -1,4 +1,3 @@
-
 import logging
 import threading
 import traceback
@@ -9,7 +8,7 @@ import goTenna
 
 from events import Events
 from messages import handle_message
-from utilities import cli, segment, rate_limit, naturalsize
+from utilities import cli, segment, rate_limit, naturalsize, mesh_auto_send
 from config import CONFIG
 
 
@@ -51,6 +50,12 @@ class Connection:
         self.bytes_sent = 0
         self.bytes_received = 0
         self.name = name
+        self.auto_send_thread = threading.Thread(
+            target=mesh_auto_send, args=[self, self.name]
+        )
+        self.auto_send_thread.start()
+        while not self.auto_send_thread.is_alive():
+            sleep(0.1)
 
     def reset_connection(self):
         if self.api_thread:
@@ -172,7 +177,12 @@ class Connection:
         captured_error_handler = [error_handler]
 
         def callback(
-            correlation_id, success=None, results=None, error=None, details=None, binary=False
+            correlation_id,
+            success=None,
+            results=None,
+            error=None,
+            details=None,
+            binary=False,
         ):
             """ The default callback to pass to the API.
             See the documentation for ``goTenna.driver``.
@@ -182,7 +192,11 @@ class Connection:
             if not binary:
                 if success:
                     if results:
-                        result = {"method": method, "results": results, "status": "Success"}
+                        result = {
+                            "method": method,
+                            "results": results,
+                            "status": "Success",
+                        }
                         self.events.callback.put(result)
                         self.log(result)
                     else:
@@ -243,7 +257,7 @@ class Connection:
                             "send_broadcast": {
                                 "status": "failed",
                                 "reason": "message may not have been sent: USB "
-                                          "connection disrupted",
+                                "connection disrupted",
                             }
                         }
                     )
@@ -364,8 +378,10 @@ class Connection:
         self.log(f"Created segmented message with {len(msg_segments)} segments")
         # extra sanity check that we don't relay messages larger than ~1 KB
         if len(msg_segments) > 12:
-            print(f"Message of {len(msg_segments)} segments too long for jumbo send. "
-                  f"Not sending")
+            print(
+                f"Message of {len(msg_segments)} segments too long for jumbo send. "
+                f"Not sending"
+            )
             return
         if not private:
             i = 0
@@ -453,7 +469,3 @@ class Connection:
             pprint(message)
         else:
             logger.debug(message)
-
-
-
-
