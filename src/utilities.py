@@ -249,3 +249,18 @@ def naturalsize(value, binary=False, gnu=True, format="%.1f"):
     if gnu:
         return (format + "%s") % ((base * bytes / unit), s)
     return (format + " %s") % ((base * bytes / unit), s)
+
+
+def mesh_auto_send(conn, name):
+    """Auto sends messages from the queue via mesh link
+    """
+    while True:
+        if not conn.events.send_via_mesh.empty():
+            data = conn.events.send_via_mesh.get()
+            conn.send_broadcast(data, binary=True)
+            conn.log(
+                f"Message sent! {name} send_via_mesh queue now contains {conn.events.send_via_mesh.qsize()} buffered messages"
+            )
+
+        else:
+            time.sleep(0.5)
