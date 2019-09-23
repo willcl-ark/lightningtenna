@@ -15,31 +15,38 @@ REMOTE_PORT = 9733
 RECV_SIZE = 210
 
 # setup goTenna mesh connections
-mesh_conn = Connection()
+mesh_conn = Connection(name="MESH")
 mesh_conn.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
 mesh_conn.set_gid(int(CONFIG["gotenna"]["DEBUG_GID"]))
 mesh_conn.set_geo_region(int(CONFIG["gotenna"]["GEO_REGION"]))
 
-gateway_conn = Connection()
+gateway_conn = Connection(name="GATEWAY")
 gateway_conn.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
 gateway_conn.set_gid(int(CONFIG["gotenna"]["GID"]))
 gateway_conn.set_geo_region(int(CONFIG["gotenna"]["GEO_REGION"]))
 
 
-def mesh_auto_send(conn):
+def mesh_auto_send(conn, name):
     """Auto sends messages from the queue via mesh link
     """
     while True:
         if not conn.events.send_via_mesh.empty():
             data = conn.events.send_via_mesh.get()
             conn.send_broadcast(data, binary=True)
+            conn.log(
+                f"Message sent! {name} send_via_mesh queue now contains {conn.events.send_via_mesh.qsize()} buffered messages"
+            )
+
         else:
             time.sleep(0.5)
 
+
 # threads which will run auto-send
-mesh_send_thread = threading.Thread(target=mesh_auto_send, args=[mesh_conn])
+mesh_send_thread = threading.Thread(target=mesh_auto_send, args=[mesh_conn, "MESH"])
 mesh_send_thread.start()
-gateway_send_thread = threading.Thread(target=mesh_auto_send, args=[gateway_conn])
+gateway_send_thread = threading.Thread(
+    target=mesh_auto_send, args=[gateway_conn, "GATEWAY"]
+)
 gateway_send_thread.start()
 
 # inputs, outputs and queues for select
@@ -53,14 +60,14 @@ server.setblocking(False)
 server.bind((LOCAL_IP, LOCAL_PORT))
 server.listen(5)
 # hack to force waiting for local C-Lightning connection
-local = None
+mesh_socket = None
 while True:
     try:
-        local, client_address = server.accept()
-        local.setblocking(False)
-        inputs.append(local)
-        outputs.append(local)
-        message_queues[local] = mesh_conn.events.send_via_socket
+        mesh_socket, client_address = server.accept()
+        mesh_socket.setblocking(False)
+        inputs.append(mesh_socket)
+        outputs.append(mesh_socket)
+        message_queues[mesh_socket] = mesh_conn.events.send_via_socket
         break
     except BlockingIOError:
         time.sleep(1)
@@ -68,11 +75,11 @@ while True:
 
 # remote setup -- will create an outbound socket to remote C-Lightning node and add it
 # to select
-remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-remote.connect((REMOTE_IP, REMOTE_PORT))
-inputs.append(remote)
-outputs.append(remote)
-message_queues[remote] = gateway_conn.events.send_via_socket
+remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+remote_socket.connect((REMOTE_IP, REMOTE_PORT))
+inputs.append(remote_socket)
+outputs.append(remote_socket)
+message_queues[remote_socket] = gateway_conn.events.send_via_socket
 
 
 # main select loop
@@ -84,9 +91,9 @@ try:
             if data:
                 print(f"\nRead {naturalsize(len(data))} data from {s.getsockname()}:")
                 hexdump(data)
-                if s is local:
+                if s is mesh_socket:
                     mesh_conn.events.send_via_mesh.put(data)
-                if s is remote:
+                if s is remote_socket:
                     gateway_conn.events.send_via_mesh.put(data)
             else:
                 s.close()
@@ -99,7 +106,9 @@ try:
                 pass
                 # outputs.remove(s)
             else:
-                print(f"Sending {naturalsize(len(next_msg))} data to {s.getsockname()}\n")
+                print(
+                    f"Sending {naturalsize(len(next_msg))} data to {s.getsockname()}\n"
+                )
                 s.send(next_msg)
 
         for s in exceptional:

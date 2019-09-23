@@ -32,7 +32,8 @@ def handle_message(conn, message):
         conn.log(f"Received binary payload:\n{hexdump(payload)}")
         # stick binary messages right onto the socket queue
         conn.events.send_via_socket.put(payload)
-        conn.log("Added payload to send_via_socket queue!")
+        conn.log(f"Added payload to {conn.name} send_via_socket queue")
+        conn.log(f"{conn.name} send_via_socket queue now contains {conn.events.send_via_socket.qsize()} messages")
     else:
         payload = message.payload.message
         # test for jumbo:

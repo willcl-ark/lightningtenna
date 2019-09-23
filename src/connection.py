@@ -28,7 +28,7 @@ SPI_READY = 27
 
 
 class Connection:
-    def __init__(self):
+    def __init__(self, name):
         self.api_thread = None
         self.status = {}
         self.in_flight_events = {}
@@ -50,6 +50,7 @@ class Connection:
         self.cli = False
         self.bytes_sent = 0
         self.bytes_received = 0
+        self.name = name
 
     def reset_connection(self):
         if self.api_thread:
@@ -260,9 +261,9 @@ class Connection:
                     payload = goTenna.payload.BinaryPayload(message)
                 else:
                     payload = goTenna.payload.TextPayload(message)
-                self.log(
-                    f"payload valid = {payload.valid}, message size = {len(message)}\n"
-                )
+                # self.log(
+                #     f"payload valid = {payload.valid}, message size = {len(message)}\n"
+                # )
 
                 corr_id = self.api_thread.send_broadcast(payload, method_callback)
                 while corr_id is None:
@@ -284,15 +285,16 @@ class Connection:
                         }
                     }
                 )
-            self.log(
-                {
-                    "send_broadcast": {
-                        "status": "complete",
-                        "message": message,
-                        "size(B)": len(message),
+            if not binary:
+                self.log(
+                    {
+                        "send_broadcast": {
+                            "status": "complete",
+                            "message": message,
+                            "size(B)": len(message),
+                        }
                     }
-                }
-            )
+                )
 
     @staticmethod
     def _parse_gid(__gid, gid_type, print_message=True):
