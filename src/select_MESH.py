@@ -51,8 +51,8 @@ try:
                 if s is mesh_socket:
                     mesh_conn.events.send_via_mesh.put(data)
             else:
+                print(f"CLOSING SOCKET: {s.getsockname()}")
                 s.close()
-                print(f"SOCKET CLOSED: {s.getsockname()}")
 
         for s in writable:
             try:
