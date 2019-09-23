@@ -32,10 +32,10 @@ Miscellany:
 1) On MESH node, access the C-Lightning database: (~/.lightning/lightningd.sqlite3). Open the `Peers` table and find the row corresponding to REMOTE (ip address and port). Modify the `address` column to have the value `127.0.0.1:9733` 
 1) Ensure REMOTE's C-Lightning is running and connected to the internet as normal.
 1) Issue RPC command to REMOTE's instance of C-Lightning: `lightning-cli dev-suppress-gossip`
-1) On MESH, start the mesh client: `python MESH_client.py`, power on goTenna and await connection messages.
-1) On GATEWAY (can be same machine) start the gateway client `python GATEWAY_client.py`, power on second goTenna and await connection messages.
+1) On MESH, start the mesh client: `python select_MESH.py`, power on goTenna and await connection messages.
+1) On GATEWAY (can be same machine) start the gateway client `python select_GATEWAY.py`, power on second goTenna and await connection messages.
 1) On MESH start C-Lightning.
-1) Watch them communicate via mesh network.
+1) Watch them communicate via mesh network proxy.
 
 ...
 
