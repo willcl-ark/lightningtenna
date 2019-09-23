@@ -21,7 +21,7 @@ class Events:
         self.callback._name = "callback_events"
         self.jumbo = []
         self.jumbo_len = 0
-        self.send_via_socket = None
+        self.send_via_socket = queue.Queue()
         self.send_via_mesh = queue.Queue()
 
 

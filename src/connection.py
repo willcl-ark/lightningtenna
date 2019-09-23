@@ -2,7 +2,6 @@
 import logging
 import threading
 import traceback
-import trio
 from pprint import pprint
 from time import sleep
 
@@ -12,8 +11,7 @@ from events import Events
 from messages import handle_message
 from utilities import cli, segment, rate_limit, naturalsize
 from config import CONFIG
-from trio_client import AsyncClient
-from trio_server import AsyncServer
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format=CONFIG["logging"]["FORMAT"])
@@ -50,18 +48,6 @@ class Connection:
         self.gateway = 0
         self.jumbo_thread = threading.Thread()
         self.cli = False
-        # if server:
-        #     self.socket = AsyncServer(self)
-        #     self.socket_thread = threading.Thread(
-        #             target=trio.run, args=[self.socket.start], daemon=True
-        #     )
-        #     self.socket_thread.start()
-        # else:
-        # self.socket = AsyncClient(self)
-        # self.socket_thread = threading.Thread(
-        #     target=self.socket.start, daemon=True
-        # )
-        # self.socket_thread.start()
         self.bytes_sent = 0
         self.bytes_received = 0
 
@@ -229,7 +215,7 @@ class Connection:
         self.log(f"GID: {self.api_thread.gid.gid_val}")
 
     @rate_limit
-    def send_broadcast(self, message):
+    def send_broadcast(self, message, binary=False):
         """ Send a broadcast message
         """
         if not self.api_thread.connected:
@@ -270,7 +256,10 @@ class Connection:
 
             try:
                 method_callback = self.build_callback(error_handler)
-                payload = goTenna.payload.TextPayload(message)
+                if binary:
+                    payload = goTenna.payload.BinaryPayload(message)
+                else:
+                    payload = goTenna.payload.TextPayload(message)
                 self.log(
                     f"payload valid = {payload.valid}, message size = {len(message)}\n"
                 )

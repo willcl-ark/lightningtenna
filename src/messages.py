@@ -3,7 +3,8 @@ import threading
 import types
 from time import sleep, time
 
-from utilities import de_segment, naturalsize
+from goTenna.payload import BinaryPayload
+from utilities import de_segment, naturalsize, hexdump
 
 RHOST = "77.98.116.8"
 RPORT = 9733
@@ -26,27 +27,33 @@ def handle_message(conn, message):
     :param message: as strings
     :return: result of message handling
     """
-    payload = message.payload.message
-
-    # test for jumbo:
-    jumbo = True if payload.startswith("sm/") else False
-    if jumbo:
-        handle_jumbo_message(conn, message)
-        return
-    if valid_base58check(payload):
-        conn.bytes_received += len(payload)
-        conn.log(f"Total bytes received: {naturalsize(conn.bytes_received)}")
-        try:
-            payload_bytes = base58.b58decode_check(payload)
-            if payload_bytes.startswith(MAGIC):
-                print("magic message received!")
-                original_payload = payload_bytes[6:]
-                conn.events.send_via_socket.put(original_payload)
-            print(payload_bytes[:6])
-        except Exception as e:
-            print(f"Error decoding data in handle_message:\n{e}")
+    if isinstance(message.payload, BinaryPayload):
+        payload = message.payload._binary_data
+        conn.log(f"Received binary payload:\n{hexdump(payload)}")
+        # stick binary messages right onto the socket queue
+        conn.events.send_via_socket.put(payload)
+        conn.log("Added payload to send_via_socket queue!")
     else:
-        print(payload)
+        payload = message.payload.message
+        # test for jumbo:
+        jumbo = True if payload.startswith("sm/") else False
+        if jumbo:
+            handle_jumbo_message(conn, message)
+            return
+        if valid_base58check(payload):
+            conn.bytes_received += len(payload)
+            conn.log(f"Total bytes received: {naturalsize(conn.bytes_received)}")
+            try:
+                payload_bytes = base58.b58decode_check(payload)
+                if payload_bytes.startswith(MAGIC):
+                    print("magic message received!")
+                    original_payload = payload_bytes[6:]
+                    conn.events.send_via_socket.put(original_payload)
+                print(payload_bytes[:6])
+            except Exception as e:
+                print(f"Error decoding data in handle_message:\n{e}")
+        else:
+            print(payload)
 
 
 def handle_jumbo_message(conn, message):
