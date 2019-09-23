@@ -2,22 +2,13 @@ import queue
 import select
 import socket
 import threading
-import time
-from config import CONFIG
-from connection import Connection
 
+from config import CONFIG
+from gotenna_connections import setup_gotenna_conn
 from utilities import hexdump, naturalsize, mesh_auto_send
 
-REMOTE_IP = "77.98.116.8"
-REMOTE_PORT = 9733
-RECV_SIZE = 210
 
-# setup goTenna mesh connections
-gateway_conn = Connection(name="GATEWAY")
-gateway_conn.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
-gateway_conn.set_gid(int(CONFIG["gotenna"]["GID"]))
-gateway_conn.set_geo_region(int(CONFIG["gotenna"]["GEO_REGION"]))
-
+gateway_conn = setup_gotenna_conn(name="GATEWAY", gateway=1)
 
 # thread which will run auto-send
 gateway_send_thread = threading.Thread(
@@ -34,7 +25,12 @@ message_queues = {}
 # remote setup -- will create an outbound socket to remote C-Lightning node and add it
 # to select
 remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-remote_socket.connect((REMOTE_IP, REMOTE_PORT))
+remote_socket.connect(
+    (
+        CONFIG["lightning"]["REMOTE_PEER_IP"],
+        int(CONFIG["lightning"]["REMOTE_PEER_PORT"]),
+    )
+)
 inputs.append(remote_socket)
 outputs.append(remote_socket)
 message_queues[remote_socket] = gateway_conn.events.send_via_socket
@@ -45,7 +41,7 @@ try:
     while inputs:
         readable, writable, exceptional = select.select(inputs, outputs, inputs)
         for s in readable:
-            data = s.recv(RECV_SIZE)
+            data = s.recv(int(CONFIG["lightning"]["RECV_SIZE"]))
             if data:
                 print(f"\nRead {naturalsize(len(data))} data from {s.getsockname()}:")
                 hexdump(data)

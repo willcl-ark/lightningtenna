@@ -3,23 +3,15 @@ import select
 import socket
 import threading
 import time
+
 from config import CONFIG
-from connection import Connection
-
-from utilities import hexdump, naturalsize, mesh_auto_send
-
-LOCAL_IP = "127.0.0.1"
-LOCAL_PORT = 9733
-RECV_SIZE = 210
-
-# setup goTenna mesh connections
-mesh_conn = Connection(name="MESH")
-mesh_conn.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
-mesh_conn.set_gid(int(CONFIG["gotenna"]["DEBUG_GID"]))
-mesh_conn.set_geo_region(int(CONFIG["gotenna"]["GEO_REGION"]))
+from gotenna_connections import setup_gotenna_conn
+from utilities import hexdump, mesh_auto_send, naturalsize
 
 
-# threads which will run auto-send
+mesh_conn = setup_gotenna_conn(name="MESH")
+
+# thread which will run auto-send
 mesh_send_thread = threading.Thread(target=mesh_auto_send, args=[mesh_conn, "MESH"])
 mesh_send_thread.start()
 
@@ -31,7 +23,12 @@ message_queues = {}
 # Server setup -- will accept a single connection "local" and add it to select
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setblocking(False)
-server.bind((LOCAL_IP, LOCAL_PORT))
+server.bind(
+        (
+            CONFIG["lightning"]["LOCAL_SERVER_IP"],
+            int(CONFIG["lightning"]["LOCAL_SERVER_PORT"])
+        )
+)
 server.listen(5)
 # hack to force waiting for local C-Lightning connection
 mesh_socket = None
@@ -47,13 +44,12 @@ while True:
         time.sleep(1)
         pass
 
-
 # main select loop
 try:
     while inputs:
         readable, writable, exceptional = select.select(inputs, outputs, inputs)
         for s in readable:
-            data = s.recv(RECV_SIZE)
+            data = s.recv(int(CONFIG["lightning"]["RECV_SIZE"]))
             if data:
                 print(f"\nRead {naturalsize(len(data))} data from {s.getsockname()}:")
                 hexdump(data)
@@ -71,7 +67,7 @@ try:
                 # outputs.remove(s)
             else:
                 print(
-                    f"Sending {naturalsize(len(next_msg))} data to {s.getsockname()}\n"
+                        f"Sending {naturalsize(len(next_msg))} data to {s.getsockname()}\n"
                 )
                 s.send(next_msg)
 
