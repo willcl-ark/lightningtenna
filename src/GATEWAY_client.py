@@ -1,12 +1,7 @@
 import time
-from config import CONFIG
-from connection import Connection
+from gotenna_connections import setup_gotenna_conn
 
-
-c = Connection(server=0)
-c.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
-c.set_gid(int(CONFIG["gotenna"]["GID"]))
-c.set_geo_region(int(CONFIG["gotenna"]["GEO_REGION"]))
+gateway_connection = setup_gotenna_conn(name="GATEWAY", server=0)
 
 try:
     while True:

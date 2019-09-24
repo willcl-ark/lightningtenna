@@ -3,22 +3,24 @@ import trio
 from config import CONFIG
 from utilities import chunk_to_queue, naturalsize
 
-HOST = CONFIG["lightning"]["LOCAL_SERVER_IP"]
-PORT = int(CONFIG["lightning"]["LOCAL_SERVER_PORT"])
+HOST = CONFIG["lightning"]["REMOTE_PEER_IP"]
+PORT = int(CONFIG["lightning"]["REMOTE_PEER_PORT"])
 CHUNK_SIZE = int(CONFIG["lightning"]["RECV_SIZE"])
 
 
 class AsyncClient:
     def __init__(self, conn):
         self.conn = conn
+        self.socket_queue = self.conn.events.send_via_socket
+        self.mesh_queue = self.conn.events.send_via_mesh
 
     async def sender(self, client_stream):
         print("[GATEWAY] send channel: started!")
         while True:
-            if self.conn.events.send_via_socket.empty():
+            if self.socket_queue.empty():
                 await trio.sleep(0.5)
             else:
-                data = self.conn.events.send_via_socket.get()
+                data = self.socket_queue.get()
                 print(f"[GATEWAY] sending {naturalsize(len(data))} via socket")
                 await client_stream.send_all(data)
 
@@ -26,7 +28,8 @@ class AsyncClient:
         print("[GATEWAY] recv socket: started!")
         async for data in client_stream:
             print(f"[GATEWAY] received {naturalsize(len(data))} from socket")
-            chunk_to_queue(data, CHUNK_SIZE, self.conn.events.send_via_mesh)
+            # add received data to mesh queue in 210B chunks
+            chunk_to_queue(data, CHUNK_SIZE, self.mesh_queue)
         print("[GATEWAY] recv socket: connection closed")
 
     async def parent(self):

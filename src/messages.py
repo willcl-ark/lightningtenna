@@ -4,7 +4,7 @@ import types
 from time import sleep, time
 
 from goTenna.payload import BinaryPayload
-from utilities import de_segment, naturalsize
+from utilities import de_segment
 
 
 
