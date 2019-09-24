@@ -115,6 +115,7 @@ def print_timer(length, interval=1):
 
 
 def rate_limit(func):
+    """Smart rate-limiter to 5 messages per 60 seconds"""
     @functools.wraps(func)
     def limit(*args, **kwargs):
         # if we've not sent 5, continue
@@ -261,11 +262,12 @@ def mesh_auto_send(conn, name):
             conn.log(
                 f"Message sent! {name} send_via_mesh queue now contains {conn.events.send_via_mesh.qsize()} buffered messages"
             )
-
         else:
             time.sleep(0.5)
 
 
 def print_list(my_list):
+    """Print a nicely formatted enumerate list
+    """
     for c, v in enumerate(my_list):
         print(c, v)
