@@ -1,12 +1,7 @@
 import time
-from config import CONFIG
-from connection import Connection
+from gotenna_connections import setup_gotenna_conn
 
-
-c = Connection(server=1)
-c.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
-c.set_gid(int(CONFIG["gotenna"]["DEBUG_GID"]))
-c.set_geo_region(int(CONFIG["gotenna"]["GEO_REGION"]))
+mesh_connection = setup_gotenna_conn(name="MESH|MESH", server=1)
 
 
 try:

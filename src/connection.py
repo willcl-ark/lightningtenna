@@ -1,19 +1,18 @@
-
 import logging
 import threading
 import traceback
-import trio
 from pprint import pprint
 from time import sleep
 
 import goTenna
+import trio
 
+from config import CONFIG
 from events import Events
 from messages import handle_message
-from utilities import cli, segment, rate_limit, naturalsize
-from config import CONFIG
 from trio_client import AsyncClient
 from trio_server import AsyncServer
+from utilities import cli, mesh_auto_send, naturalsize, rate_limit, segment, hexdump
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format=CONFIG["logging"]["FORMAT"])
@@ -30,7 +29,7 @@ SPI_READY = 27
 
 
 class Connection:
-    def __init__(self, server=0):
+    def __init__(self, name, server=0):
         self.api_thread = None
         self.status = {}
         self.in_flight_events = {}
@@ -50,25 +49,31 @@ class Connection:
         self.gateway = 0
         self.jumbo_thread = threading.Thread()
         self.cli = False
-        if server:
+        self.bytes_sent = 0
+        self.bytes_received = 0
+        self.name = name
+        self.server = server
+        self.auto_send_thread = threading.Thread(
+            target=mesh_auto_send, args=[self, self.name]
+        )
+        self.auto_send_thread.start()
+        while not self.auto_send_thread.is_alive():
+            sleep(0.1)
+        if self.server:
             self.socket = AsyncServer(self)
             self.socket_thread = threading.Thread(
-                    target=trio.run, args=[self.socket.start], daemon=True
+                target=trio.run, args=[self.socket.start], daemon=True
             )
             self.socket_thread.start()
         else:
             self.socket = AsyncClient(self)
-            self.socket_thread = threading.Thread(
-                target=self.socket.start, daemon=True
-            )
+            self.socket_thread = threading.Thread(target=self.socket.start, daemon=True)
             self.socket_thread.start()
-        self.bytes_sent = 0
-        self.bytes_received = 0
 
     def reset_connection(self):
         if self.api_thread:
             self.api_thread.join()
-        self.__init__()
+        self.__init__(self.name, self.server)
 
     @cli
     def sdk_token(self, sdk_token):
@@ -163,7 +168,7 @@ class Connection:
             )
             self.events.group_create.put(evt)
 
-    def build_callback(self, error_handler=None):
+    def build_callback(self, error_handler=None, binary=False):
         """ Build a callback for sending to the API thread. May specify a callable
         error_handler(details) taking the error details from the callback.
         The handler should return a string.
@@ -185,32 +190,42 @@ class Connection:
         captured_error_handler = [error_handler]
 
         def callback(
-            correlation_id, success=None, results=None, error=None, details=None
+            correlation_id,
+            success=None,
+            results=None,
+            error=None,
+            details=None,
+            binary=binary,
         ):
             """ The default callback to pass to the API.
             See the documentation for ``goTenna.driver``.
             Does nothing but print whether the method succeeded or failed.
             """
             method = self.in_flight_events.pop(correlation_id.bytes, "Method call")
-            if success:
-                if results:
-                    result = {"method": method, "results": results, "status": "Success"}
-                    self.events.callback.put(result)
-                    self.log(result)
-                else:
-                    result = {"method": method, "status": "success"}
-                    self.events.callback.put(result)
-                    self.log(result)
-            elif error:
-                if not captured_error_handler[0]:
-                    captured_error_handler[0] = default_error_handler
-                    result = {
-                        "method": method,
-                        "error_details": captured_error_handler[0](details),
-                        "status": "failed",
-                    }
-                    self.events.callback.put(result)
-                    self.log(result)
+            if not binary:
+                if success:
+                    if results:
+                        result = {
+                            "method": method,
+                            "results": results,
+                            "status": "Success",
+                        }
+                        self.events.callback.put(result)
+                        self.log(result)
+                    else:
+                        result = {"method": method, "status": "success"}
+                        self.events.callback.put(result)
+                        self.log(result)
+                elif error:
+                    if not captured_error_handler[0]:
+                        captured_error_handler[0] = default_error_handler
+                        result = {
+                            "method": method,
+                            "error_details": captured_error_handler[0](details),
+                            "status": "failed",
+                        }
+                        self.events.callback.put(result)
+                        self.log(result)
 
         return callback
 
@@ -229,7 +244,7 @@ class Connection:
         self.log(f"GID: {self.api_thread.gid.gid_val}")
 
     @rate_limit
-    def send_broadcast(self, message):
+    def send_broadcast(self, message, binary=False):
         """ Send a broadcast message
         """
         if not self.api_thread.connected:
@@ -255,7 +270,7 @@ class Connection:
                             "send_broadcast": {
                                 "status": "failed",
                                 "reason": "message may not have been sent: USB "
-                                          "connection disrupted",
+                                "connection disrupted",
                             }
                         }
                     )
@@ -269,11 +284,12 @@ class Connection:
                 )
 
             try:
-                method_callback = self.build_callback(error_handler)
-                payload = goTenna.payload.TextPayload(message)
-                self.log(
-                    f"payload valid = {payload.valid}, message size = {len(message)}\n"
-                )
+                if binary:
+                    method_callback = self.build_callback(error_handler, binary=True)
+                    payload = goTenna.payload.BinaryPayload(message)
+                else:
+                    method_callback = self.build_callback(error_handler)
+                    payload = goTenna.payload.TextPayload(message)
 
                 corr_id = self.api_thread.send_broadcast(payload, method_callback)
                 while corr_id is None:
@@ -285,7 +301,9 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                self.log(f"Total bytes sent: {naturalsize(self.bytes_sent)}")
+                if binary:
+                    self.log(hexdump(message))
+                self.log(f"Total bytes sent via mesh: {naturalsize(self.bytes_sent)}")
             except ValueError:
                 self.log(
                     {
@@ -295,15 +313,16 @@ class Connection:
                         }
                     }
                 )
-            self.log(
-                {
-                    "send_broadcast": {
-                        "status": "complete",
-                        "message": message,
-                        "size(B)": len(message),
+            if not binary:
+                self.log(
+                    {
+                        "send_broadcast": {
+                            "status": "complete",
+                            "message": message,
+                            "size(B)": len(message),
+                        }
                     }
-                }
-            )
+                )
 
     @staticmethod
     def _parse_gid(__gid, gid_type, print_message=True):
@@ -366,14 +385,15 @@ class Connection:
             gid.gid_val, message
         )
 
-    @rate_limit
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
         msg_segments = segment(message, segment_size)
         self.log(f"Created segmented message with {len(msg_segments)} segments")
         # extra sanity check that we don't relay messages larger than ~1 KB
         if len(msg_segments) > 12:
-            print(f"Message of {len(msg_segments)} segments too long for jumbo send. "
-                  f"Not sending")
+            print(
+                f"Message of {len(msg_segments)} segments too long for jumbo send. "
+                f"Not sending"
+            )
             return
         if not private:
             i = 0
@@ -460,8 +480,5 @@ class Connection:
         if self.cli:
             pprint(message)
         else:
-            logger.debug(message)
-
-
-
-
+            name = '{0: <16}'.format(f"[{self.name}]")
+            logger.debug(f"{name} {message}")

@@ -16,6 +16,8 @@ SEND_TIMES = []
 
 
 def hexdump(data, length=16):
+    """Print a hexdump of data
+    """
     filter = "".join([(len(repr(chr(x))) == 3) and chr(x) or "." for x in range(256)])
     lines = []
     digits = 4 if isinstance(data, str) else 2
@@ -111,10 +113,11 @@ def print_timer(length, interval=1):
         sys.stdout.flush()
         time.sleep(1)
 
-    sys.stdout.write("\rComplete!                                                   \n")
+    # sys.stdout.write("\rComplete!                                                   \n")
 
 
 def rate_limit(func):
+    """Smart rate-limiter to 5 messages per 60 seconds"""
     @functools.wraps(func)
     def limit(*args, **kwargs):
         # if we've not sent 5, continue
@@ -137,13 +140,31 @@ def rate_limit(func):
     return limit
 
 
+def rate_limit2(func):
+    """Dumb rate-limiter to one message per 12 seconds
+    """
+    @functools.wraps(func)
+    def limit(*args, **kwargs):
+        if len(SEND_TIMES) == 0:
+            pass
+        else:
+            wait = int((SEND_TIMES[-1] + 12) - time.time()) + 1
+            print_timer(wait)
+
+        # add this send to the send_list
+        SEND_TIMES.append(time.time())
+
+        return func(*args, **kwargs)
+
+    return limit
+
+
 def segment(msg, segment_size: int):
     """
     :param msg: string or json-compatible object
     :param segment_size: integer
     :return: list of strings ready for sequential transmission
     """
-
     try:
         if not isinstance(msg, str):
             msg = json.dumps(msg)
@@ -164,6 +185,11 @@ def segment(msg, segment_size: int):
     return msg_list
 
 
+def sort_segment(val):
+    a, b, c, msg = val.split("/")
+    return int(b)
+
+
 def de_segment(segment_list: list):
     """
     :param segment_list: a list of prefixed strings
@@ -173,7 +199,7 @@ def de_segment(segment_list: list):
     for i in segment_list:
         if not i.startswith("sm/"):
             del segment_list[i]
-    segment_list.sort()
+    segment_list.sort(key=sort_segment)
 
     # remove the header and compile result
     result = ""
@@ -198,7 +224,7 @@ suffixes = {
 
 
 def naturalsize(value, binary=False, gnu=True, format="%.1f"):
-    """
+    """show us sizes nicely formatted
     https://github.com/jmoiron/humanize.git
     """
     if gnu:
@@ -227,3 +253,28 @@ def naturalsize(value, binary=False, gnu=True, format="%.1f"):
     if gnu:
         return (format + "%s") % ((base * bytes / unit), s)
     return (format + " %s") % ((base * bytes / unit), s)
+
+
+def mesh_auto_send(conn, name):
+    """Auto sends messages from the queue via mesh link
+    """
+    while True:
+        if not conn.events.send_via_mesh.empty():
+            data = conn.events.send_via_mesh.get()
+            conn.send_broadcast(data, binary=True)
+        else:
+            time.sleep(0.5)
+
+
+def print_list(my_list):
+    """Print a nicely formatted enumerate list
+    """
+    for c, v in enumerate(my_list):
+        print(c, v)
+
+
+def chunk_to_queue(data, chunk_len, queue):
+    """Adds data of arbitrary length to a queue in a certain chunk size
+    """
+    for i in range(0, len(data), chunk_len):
+        queue.put(data[i:i+chunk_len])
