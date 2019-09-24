@@ -28,15 +28,25 @@ Miscellany:
 ## Setup
 
 1) Before first start, modify the values in example_config.ini as appropriate
-1) Ensure MESH has only have a single peer and single channel open in C-Lightning (technically not essential, but certainly clearer to use like this right now)
-1) On MESH node, access the C-Lightning database: (~/.lightning/lightningd.sqlite3). Open the `Peers` table and find the row corresponding to REMOTE (ip address and port). Modify the `address` column to have the value `127.0.0.1:9733` 
-1) Ensure REMOTE's C-Lightning is running and connected to the internet as normal.
-1) Issue RPC command to REMOTE's instance of C-Lightning: `lightning-cli dev-suppress-gossip`
-1) On MESH, start the mesh client: `python select_MESH.py`, power on goTenna and await connection messages.
-1) On GATEWAY (can be same machine) start the gateway client `python select_GATEWAY.py`, power on second goTenna and await connection messages.
+
+1) MESH and REMOTE C-Lightning must be compiled with configure flag `--enable-developer`
+
+1) MESH should have a single peer and single channel open in C-Lightning
+
+1) On MESH, ensure C-Lightning is not running
+
+1) On MESH, in the C-Lightning source code modify `lightningd/peer_htlcs.c` and on Line 468, change `30` to `300` to give us a longer timeout on HTLCs. Now recompile C-Lightning (don't forget `./configure` flags!) with this patch.
+
+1) On MESH, access the C-Lightning database: (~/.lightning/lightningd.sqlite3). Open the `Peers` table and find the row corresponding to REMOTE (ip address and port). Modify the `address` column to have the value `127.0.0.1:9733`, or whatever you set in `example_config.ini` previously
+
+1) On REMOTE start C-Lightning. Issue RPC command: `lightning-cli dev-suppress-gossip`
+
+1) On MESH, start the python mesh client: `python MESH_client.py`, power on goTenna (a) and await connection messages.
+
+1) On GATEWAY (can be same machine for testing) start the gateway client `python GATEWAY_client.py`, power on goTenna (b) and await connection messages.
+
 1) On MESH start C-Lightning.
+
 1) Watch them communicate via mesh network proxy.
 
-...
-
-* TODO: Pay invoice successfully :)
+1) Pay an invoice.
