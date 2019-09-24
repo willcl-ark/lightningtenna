@@ -2,19 +2,9 @@ import threading
 import types
 from time import sleep, time
 
-import base58
 from goTenna.payload import BinaryPayload
 
 from utilities import de_segment
-
-
-def valid_base58check(data):
-    try:
-        base58.b58decode_check(data)
-        print("Base58 encoded data detected")
-        return True
-    except Exception:
-        return False
 
 
 def handle_message(conn, message):
@@ -34,18 +24,6 @@ def handle_message(conn, message):
         if jumbo:
             handle_jumbo_message(conn, message)
             return
-        # if valid_base58check(payload):
-        #     conn.bytes_received += len(payload)
-        #     conn.log(f"Total bytes received: {naturalsize(conn.bytes_received)}")
-        #     try:
-        #         payload_bytes = base58.b58decode_check(payload)
-        #         if payload_bytes.startswith(MAGIC):
-        #             print("magic message received!")
-        #             original_payload = payload_bytes[6:]
-        #             conn.events.send_via_socket.put(original_payload)
-        #         print(payload_bytes[:6])
-        #     except Exception as e:
-        #         print(f"Error decoding data in handle_message:\n{e}")
         else:
             print(payload)
 
