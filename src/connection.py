@@ -291,7 +291,7 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                self.log(f"Total bytes sent: {naturalsize(self.bytes_sent)}")
+                # self.log(f"Total bytes sent: {naturalsize(self.bytes_sent)}")
             except ValueError:
                 self.log(
                     {

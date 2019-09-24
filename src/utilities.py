@@ -264,3 +264,8 @@ def mesh_auto_send(conn, name):
 
         else:
             time.sleep(0.5)
+
+
+def print_list(my_list):
+    for c, v in enumerate(my_list):
+        print(c, v)
