@@ -14,7 +14,7 @@ Optional but recommended C-Lightning `config` options:
 
 ```
 # listen but don't announce
-bind-addr=0.0.0.0:9734
+bind-addr=0.0.0.0:9733
 # disable dns lookup of peers
 disable-dns
 # see wire messages
