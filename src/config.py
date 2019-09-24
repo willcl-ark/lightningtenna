@@ -14,8 +14,8 @@ def get_config_file():
     if not os.path.exists(config_path):
         print(f"Config file not found, copying example config... to {config_path}")
         os.makedirs(config_path)
-    if not os.path.exists(config_path + 'config.ini'):
-        example_config = os.path.join(os.path.dirname(__file__), 'example_config.ini')
+    if not os.path.exists(config_path + "config.ini"):
+        example_config = os.path.join(os.path.dirname(__file__), "example_config.ini")
         copyfile(example_config, config_path + "config.ini")
     return os.environ.get("CONFIG_FILE", DEFAULT_CONFIG_FILE)
 

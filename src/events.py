@@ -24,7 +24,6 @@ class Events:
         self.send_via_socket = queue.Queue()
         self.send_via_mesh = queue.Queue()
 
-
     def get_all_connection(self):
         """Get all connect, disconnect and device present messages
         Returns a dict of queues, and their respective messages as a list for each queue

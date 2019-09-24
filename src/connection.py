@@ -1,19 +1,18 @@
 import logging
 import threading
 import traceback
-import trio
 from pprint import pprint
 from time import sleep
 
 import goTenna
+import trio
 
+from config import CONFIG
 from events import Events
 from messages import handle_message
-from utilities import cli, segment, rate_limit, naturalsize, mesh_auto_send
-from config import CONFIG
-from trio_server import AsyncServer
 from trio_client import AsyncClient
-
+from trio_server import AsyncServer
+from utilities import cli, mesh_auto_send, naturalsize, rate_limit, segment, hexdump
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format=CONFIG["logging"]["FORMAT"])
@@ -63,14 +62,12 @@ class Connection:
         if self.server:
             self.socket = AsyncServer(self)
             self.socket_thread = threading.Thread(
-                    target=trio.run, args=[self.socket.start], daemon=True
+                target=trio.run, args=[self.socket.start], daemon=True
             )
             self.socket_thread.start()
         else:
             self.socket = AsyncClient(self)
-            self.socket_thread = threading.Thread(
-                target=self.socket.start, daemon=True
-            )
+            self.socket_thread = threading.Thread(target=self.socket.start, daemon=True)
             self.socket_thread.start()
 
     def reset_connection(self):
@@ -198,7 +195,7 @@ class Connection:
             results=None,
             error=None,
             details=None,
-            binary=False,
+            binary=binary,
         ):
             """ The default callback to pass to the API.
             See the documentation for ``goTenna.driver``.
@@ -293,9 +290,6 @@ class Connection:
                 else:
                     method_callback = self.build_callback(error_handler)
                     payload = goTenna.payload.TextPayload(message)
-                # self.log(
-                #     f"payload valid = {payload.valid}, message size = {len(message)}\n"
-                # )
 
                 corr_id = self.api_thread.send_broadcast(payload, method_callback)
                 while corr_id is None:
@@ -307,7 +301,9 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                # self.log(f"Total bytes sent: {naturalsize(self.bytes_sent)}")
+                if binary:
+                    self.log(hexdump(message))
+                self.log(f"Total bytes sent via mesh: {naturalsize(self.bytes_sent)}")
             except ValueError:
                 self.log(
                     {
@@ -484,4 +480,5 @@ class Connection:
         if self.cli:
             pprint(message)
         else:
-            logger.debug(message)
+            name = '{0: <16}'.format(f"[{self.name}]")
+            logger.debug(f"{name} {message}")

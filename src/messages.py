@@ -1,12 +1,11 @@
-import base58
 import threading
 import types
 from time import sleep, time
 
+import base58
 from goTenna.payload import BinaryPayload
+
 from utilities import de_segment
-
-
 
 
 def valid_base58check(data):

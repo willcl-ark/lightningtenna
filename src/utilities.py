@@ -16,6 +16,8 @@ SEND_TIMES = []
 
 
 def hexdump(data, length=16):
+    """Print a hexdump of data
+    """
     filter = "".join([(len(repr(chr(x))) == 3) and chr(x) or "." for x in range(256)])
     lines = []
     digits = 4 if isinstance(data, str) else 2
@@ -111,7 +113,7 @@ def print_timer(length, interval=1):
         sys.stdout.flush()
         time.sleep(1)
 
-    sys.stdout.write("\rComplete!                                                   \n")
+    # sys.stdout.write("\rComplete!                                                   \n")
 
 
 def rate_limit(func):
@@ -139,6 +141,8 @@ def rate_limit(func):
 
 
 def rate_limit2(func):
+    """Dumb rate-limiter to one message per 12 seconds
+    """
     @functools.wraps(func)
     def limit(*args, **kwargs):
         if len(SEND_TIMES) == 0:
@@ -161,7 +165,6 @@ def segment(msg, segment_size: int):
     :param segment_size: integer
     :return: list of strings ready for sequential transmission
     """
-
     try:
         if not isinstance(msg, str):
             msg = json.dumps(msg)
@@ -221,7 +224,7 @@ suffixes = {
 
 
 def naturalsize(value, binary=False, gnu=True, format="%.1f"):
-    """
+    """show us sizes nicely formatted
     https://github.com/jmoiron/humanize.git
     """
     if gnu:
@@ -259,9 +262,6 @@ def mesh_auto_send(conn, name):
         if not conn.events.send_via_mesh.empty():
             data = conn.events.send_via_mesh.get()
             conn.send_broadcast(data, binary=True)
-            conn.log(
-                f"Message sent! {name} send_via_mesh queue now contains {conn.events.send_via_mesh.qsize()} buffered messages"
-            )
         else:
             time.sleep(0.5)
 

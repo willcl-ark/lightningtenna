@@ -1,5 +1,5 @@
-from connection import Connection
 from config import CONFIG
+from connection import Connection
 
 
 def setup_gotenna_conn(name, server=0):
@@ -12,4 +12,3 @@ def setup_gotenna_conn(name, server=0):
 
     conn.set_geo_region(int(CONFIG["gotenna"]["GEO_REGION"]))
     return conn
-
