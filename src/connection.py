@@ -1,6 +1,7 @@
 import logging
 import threading
 import traceback
+import trio
 from pprint import pprint
 from time import sleep
 
@@ -10,6 +11,8 @@ from events import Events
 from messages import handle_message
 from utilities import cli, segment, rate_limit, naturalsize, mesh_auto_send
 from config import CONFIG
+from trio_server import AsyncServer
+from trio_client import AsyncClient
 
 
 logger = logging.getLogger(__name__)
@@ -27,7 +30,7 @@ SPI_READY = 27
 
 
 class Connection:
-    def __init__(self, name):
+    def __init__(self, name, server=0):
         self.api_thread = None
         self.status = {}
         self.in_flight_events = {}
@@ -50,17 +53,30 @@ class Connection:
         self.bytes_sent = 0
         self.bytes_received = 0
         self.name = name
+        self.server = server
         self.auto_send_thread = threading.Thread(
             target=mesh_auto_send, args=[self, self.name]
         )
         self.auto_send_thread.start()
         while not self.auto_send_thread.is_alive():
             sleep(0.1)
+        if self.server:
+            self.socket = AsyncServer(self)
+            self.socket_thread = threading.Thread(
+                    target=trio.run, args=[self.socket.start], daemon=True
+            )
+            self.socket_thread.start()
+        else:
+            self.socket = AsyncClient(self)
+            self.socket_thread = threading.Thread(
+                target=self.socket.start, daemon=True
+            )
+            self.socket_thread.start()
 
     def reset_connection(self):
         if self.api_thread:
             self.api_thread.join()
-        self.__init__()
+        self.__init__(self.name, self.server)
 
     @cli
     def sdk_token(self, sdk_token):
