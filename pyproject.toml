@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "lightningtenna"
+version = "0.1.1"
+description = ""
+authors = ["willcl-ark <will8clark@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+simplejson = "3.16.0"
+trio = "0.12.1"
+wheel = "^0.33.6"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
