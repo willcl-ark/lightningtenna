@@ -10,9 +10,8 @@ import trio
 from config import CONFIG
 from events import Events
 from messages import handle_message
-from trio_client import AsyncClient
-from trio_server import AsyncServer
-from utilities import cli, mesh_auto_send, naturalsize, rate_limit, segment, hexdump
+from trio_sockets import TrioSocket
+from utilities import cli, hexdump, mesh_auto_send, naturalsize, rate_limit, segment
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format=CONFIG["logging"]["FORMAT"])
@@ -60,14 +59,16 @@ class Connection:
         while not self.auto_send_thread.is_alive():
             sleep(0.1)
         if self.server:
-            self.socket = AsyncServer(self)
+            self.socket = TrioSocket(self, "MESH")
             self.socket_thread = threading.Thread(
-                target=trio.run, args=[self.socket.start], daemon=True
+                target=trio.run, args=[self.socket.start_server], daemon=True
             )
             self.socket_thread.start()
         else:
-            self.socket = AsyncClient(self)
-            self.socket_thread = threading.Thread(target=self.socket.start, daemon=True)
+            self.socket = TrioSocket(self, "MESH")
+            self.socket_thread = threading.Thread(
+                target=self.socket.start_client, daemon=True
+            )
             self.socket_thread.start()
 
     def reset_connection(self):
