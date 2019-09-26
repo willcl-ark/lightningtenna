@@ -14,7 +14,9 @@ from trio_sockets import TrioSocket
 from utilities import cli, hexdump, mesh_auto_send, naturalsize, rate_limit, segment
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format=CONFIG["logging"]["FORMAT"])
+logging.basicConfig(
+    level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT", "%(message)s")
+)
 # mute some of the other noisy loggers
 logging.getLogger("goTenna").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.INFO)
@@ -481,5 +483,5 @@ class Connection:
         if self.cli:
             pprint(message)
         else:
-            name = '{0: <16}'.format(f"[{self.name}]")
+            name = "{0: <16}".format(f"[{self.name}]")
             logger.debug(f"{name} {message}")

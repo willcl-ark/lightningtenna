@@ -9,7 +9,10 @@ import simplejson as json
 from config import CONFIG
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format=CONFIG["logging"]["FORMAT"])
+logging.basicConfig(
+        level=logging.DEBUG,
+        format=CONFIG.get("logging", "FORMAT", fallback="%(message)s")
+)
 
 MSG_TYPE = {2: "BROADCAST", 3: "EMERGENCY", 1: "GROUP", 0: "PRIVATE"}
 SEND_TIMES = []
@@ -273,7 +276,7 @@ def print_list(my_list):
         print(c, v)
 
 
-def chunk_to_queue(data, chunk_len, queue):
+def chunk_and_queue(data, chunk_len, queue):
     """Adds data of arbitrary length to a queue in a certain chunk size
     """
     for i in range(0, len(data), chunk_len):
