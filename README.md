@@ -45,12 +45,14 @@ log-level=io
 
 1) On REMOTE start C-Lightning. Issue RPC command: `lightning-cli dev-suppress-gossip`
 
-1) On MESH, start the python mesh client: `python MESH_client.py`, power on goTenna (a) and await connection messages.
+1) On MESH, start the python mesh client: `python lightningtenna.py --mesh`, power on goTenna (a) and await connection messages.
 
-1) On GATEWAY (can be same machine for testing) start the gateway client `python GATEWAY_client.py`, power on goTenna (b) and await connection messages.
+1) On GATEWAY (can be same machine for testing) start the gateway client `python lightningtenna.py --gatway`, power on goTenna (b) and await connection messages.
 
 1) On MESH start C-Lightning.
 
 1) Watch them communicate via mesh network proxy.
+
+    N.B: Only mesh transmissions will be hexdumped to the terminal output 
 
 1) Pay an invoice.
