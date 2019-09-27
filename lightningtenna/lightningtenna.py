@@ -28,9 +28,9 @@ class LightningTenna:
         self.mesh_connection = setup_gotenna_conn(name=f"{name}|MESH", offgrid=offgrid)
         self.start_mesh_thread()
         if offgrid:
-            self.start_server()
+            self.start_mesh_server()
         else:
-            self.start_connection()
+            self.start_gateway_connection()
         print("Lightningtenna node started!")
 
     def start_mesh_thread(self):
@@ -46,7 +46,7 @@ class LightningTenna:
         while not mesh_send_thread.is_alive():
             time.sleep(0.1)
 
-    def start_server(self):
+    def start_mesh_server(self):
         # start the listening server. MESH's C-Lightning instance will connect to this!
         socket = TrioSocket(
             self.mesh_connection.events.send_via_socket,
@@ -58,7 +58,7 @@ class LightningTenna:
         )
         socket_thread.start()
 
-    def start_connection(self):
+    def start_gateway_connection(self):
         # start the outbound connection to the REMOTE C-Lightning node
         socket = TrioSocket(
             self.mesh_connection.events.send_via_socket,
@@ -70,7 +70,7 @@ class LightningTenna:
 
 
 def main(name, offgrid=1):
-    node = LightningTenna(name, offgrid)
+    LightningTenna(name, offgrid)
     # temporary main loop
     print("use `ctrl + c` to exit")
     try:

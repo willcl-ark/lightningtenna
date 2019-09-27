@@ -289,7 +289,7 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                self.log(f"Total bytes sent via mesh: {naturalsize(self.bytes_sent)}")
+                self.log(f"Sent {naturalsize(len(message))} -- Total: {naturalsize(self.bytes_sent)}")
                 if binary:
                     self.log(hexdump(message))
             except ValueError:

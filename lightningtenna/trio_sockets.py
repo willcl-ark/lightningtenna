@@ -39,7 +39,7 @@ class TrioSocket:
                 data = self.socket_queue.get()
                 total_sent[id] += len(data)
                 print(
-                    f"{self.name} sending {naturalsize(len(data))} "
+                    f"{self.name} sending {naturalsize(len(data))} -- "
                     f"Total: {naturalsize(total_sent[id])}"
                 )
                 await stream.send_all(data)
@@ -51,7 +51,7 @@ class TrioSocket:
         async for data in stream:
             total_received[id] += len(data)
             print(
-                f"{self.name} received {naturalsize(len(data))} "
+                f"{self.name} received {naturalsize(len(data))} -- "
                 f"Total: {naturalsize(total_received[id])}"
             )
             # add received data to mesh queue in 210B chunks
