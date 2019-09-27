@@ -199,9 +199,11 @@ class Connection:
                         self.events.callback.put(result)
                         self.log(result)
                 if binary:
-                    if results:
-                        print("Sent via mesh:\n")
-                        hexdump(results)
+                    # TODO: result not being returned for binary payloads
+                    pass
+                    # if results:
+                    #     print("Sent via mesh:\n")
+                    #     hexdump(results)
             elif error:
                 if not captured_error_handler[0]:
                     captured_error_handler[0] = default_error_handler
@@ -231,7 +233,7 @@ class Connection:
 
     @rate_limit
     def send_broadcast(self, message, binary=False):
-        """ Send a broadcast message
+        """ Send a broadcast message, if binary=True, message must be bytes
         """
         if not self.api_thread.connected:
             self.log(
@@ -287,9 +289,9 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
+                self.log(f"Total bytes sent via mesh: {naturalsize(self.bytes_sent)}")
                 if binary:
                     self.log(hexdump(message))
-                self.log(f"Total bytes sent via mesh: {naturalsize(self.bytes_sent)}")
             except ValueError:
                 self.log(
                     {

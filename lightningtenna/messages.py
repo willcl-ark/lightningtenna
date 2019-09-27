@@ -29,20 +29,24 @@ def handle_message(conn, message):
 
 
 def handle_jumbo_message(conn, message):
+    """Handle a jumbo message received.
+    """
     payload = message.payload.message
     # TODO: this cuts out all sender and receiver info -- ADD SENDER GID
     conn.log(f"Received jumbo message fragment")
     prefix, seq, length, msg = payload.split("/")
+
+    # if a jumbo monitor thread is not running, start one
     if conn.jumbo_thread.is_alive():
         pass
     else:
-        # start the jumbo monitor thread
         conn.events.jumbo_len = length
         conn.jumbo_thread = None
         conn.jumbo_thread = threading.Thread(
             target=monitor_jumbo_msgs, daemon=True, args=[conn]
         )
         conn.jumbo_thread.start()
+    # add the message to the events.jumbo queue
     conn.events.jumbo.append(payload)
     return
 

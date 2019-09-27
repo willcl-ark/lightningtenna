@@ -76,6 +76,8 @@ def handle_text_msg(message):
 
 
 def cli(func):
+    """If we are running a cli program, try to pprint stuff
+    """
     def if_cli(*args, **kwargs):
         result = func(*args, **kwargs)
         if args[0].cli:
@@ -87,6 +89,8 @@ def cli(func):
 
 
 def print_timer(length, interval=1):
+    """Will print a pretty timer to the console while we wait for something to complete
+    """
     for remaining in range(length, 0, interval * -1):
         sys.stdout.write("\r")
         sys.stdout.write(
@@ -97,16 +101,17 @@ def print_timer(length, interval=1):
 
 
 def rate_limit(func):
-    """Smart rate-limiter to 5 messages per 60 seconds"""
+    """Smart rate-limiter to 5 messages per 60 seconds
+    """
     @functools.wraps(func)
     def limit(*args, **kwargs):
-        # if we've not sent 5, continue
+        # if we've not sent 5 in total, continue right away
         if len(SEND_TIMES) < 5:
             pass
-        # if our 5th oldest is older than 60 seconds ago, continue
+        # if our 5th oldest is older than 60 seconds ago, continue right away
         elif SEND_TIMES[-5] < (time.time() - 60):
             pass
-        # else pause for the required amount of time
+        # otherwise pause for the required amount of time
         else:
             wait = int(60 - (time.time() - SEND_TIMES[-5])) + 1
             print_timer(wait)
@@ -114,7 +119,7 @@ def rate_limit(func):
         # add this send to the send_list
         SEND_TIMES.append(time.time())
 
-        # make the send
+        # execute the send
         return func(*args, **kwargs)
 
     return limit

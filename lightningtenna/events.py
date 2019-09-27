@@ -4,6 +4,9 @@ from utilities import de_segment, handle_event, handle_text_msg
 
 
 class Events:
+    """A class to store the various queues used by goTenna connection. Using queues
+    ensures thread-safe management of messages sent and received
+    """
     def __init__(self):
         self.msg = queue.Queue()
         self.msg._name = "msg_events"

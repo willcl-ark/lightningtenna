@@ -16,6 +16,13 @@ total_received = {}
 
 
 class TrioSocket:
+    """This class takes a socket queue, a mesh queue and a name.
+
+    It will monitor the socket queue for messages and, when it finds one will send it
+    out over the socket.
+
+    When a message is received from the socket, it will be placed onto the mesh queue.
+    """
     def __init__(self, socket_queue, mesh_queue, name):
         self.socket_queue = socket_queue
         self.mesh_queue = mesh_queue

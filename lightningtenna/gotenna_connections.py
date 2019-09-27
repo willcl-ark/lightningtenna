@@ -3,6 +3,9 @@ from connection import Connection
 
 
 def setup_gotenna_conn(name, offgrid):
+    """Sets up and returns a goTenna connection with a 'name' and 'offgrid' param.
+    offgrid should be True for machines with no direct internet connection, e.g. MESH
+    """
     conn = Connection(name=name)
     conn.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
     if offgrid:

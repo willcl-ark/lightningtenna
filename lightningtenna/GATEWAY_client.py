@@ -10,7 +10,7 @@ from utilities import mesh_auto_send
 gateway_connection = setup_gotenna_conn(name="GATEWAY|MESH", offgrid=0)
 
 
-# start a mesh send thread
+# start a thread to send messages it finds in it's queue, over the mesh
 mesh_send_thread = threading.Thread(
     target=mesh_auto_send,
     args=[gateway_connection.send_broadcast, gateway_connection.events.send_via_mesh],
@@ -20,7 +20,7 @@ while not mesh_send_thread.is_alive():
     time.sleep(0.1)
 
 
-# start the outbound connection
+# start the outbound connection to the REMOTE C-Lightning node
 socket = TrioSocket(
     gateway_connection.events.send_via_socket,
     gateway_connection.events.send_via_mesh,
