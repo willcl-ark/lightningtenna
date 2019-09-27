@@ -24,7 +24,7 @@ log-level=io
 
 ## Setup
 
-1) C-Lightning on MESH and GATEWAY *must* be modified before compilation:
+1) C-Lightning must be v0.7.1 on MESH and GATEWAY and *must* be modified before compilation:
     
     1) Apply the following changes to source code for C-Lightning on MESH and GATEWAY: 
     
