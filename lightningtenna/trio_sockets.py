@@ -16,10 +16,9 @@ total_received = {}
 
 
 class TrioSocket:
-    def __init__(self, conn, name):
-        self.conn = conn
-        self.socket_queue = self.conn.events.send_via_socket
-        self.mesh_queue = self.conn.events.send_via_mesh
+    def __init__(self, socket_queue, mesh_queue, name):
+        self.socket_queue = socket_queue
+        self.mesh_queue = mesh_queue
         self.name = "{0: <16}".format(f"[{name}|SOCKET]")
 
     async def sender(self, stream):

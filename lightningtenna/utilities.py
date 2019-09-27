@@ -75,27 +75,6 @@ def handle_text_msg(message):
     }
 
 
-def wait_for(success, timeout=20, interval=1):
-    start_time = time.time()
-    while not success() and time.time() < start_time + timeout:
-        time.sleep(interval)
-    if time.time() > start_time + timeout:
-        raise ValueError("Error waiting for {}", success)
-
-
-def check_connection(func):
-    def exists(*args, **kwargs):
-        if g.CONN is None:
-            return {
-                "status": "Connection does not exist. \
-                    First create connection using 'sdk_token()'"
-            }
-        result = func(*args, **kwargs)
-        return result
-
-    return exists
-
-
 def cli(func):
     def if_cli(*args, **kwargs):
         result = func(*args, **kwargs)
@@ -115,8 +94,6 @@ def print_timer(length, interval=1):
         )
         sys.stdout.flush()
         time.sleep(1)
-
-    # sys.stdout.write("\rComplete!                                                   \n")
 
 
 def rate_limit(func):
@@ -138,25 +115,6 @@ def rate_limit(func):
         SEND_TIMES.append(time.time())
 
         # make the send
-        return func(*args, **kwargs)
-
-    return limit
-
-
-def rate_limit2(func):
-    """Dumb rate-limiter to one message per 12 seconds
-    """
-    @functools.wraps(func)
-    def limit(*args, **kwargs):
-        if len(SEND_TIMES) == 0:
-            pass
-        else:
-            wait = int((SEND_TIMES[-1] + 12) - time.time()) + 1
-            print_timer(wait)
-
-        # add this send to the send_list
-        SEND_TIMES.append(time.time())
-
         return func(*args, **kwargs)
 
     return limit
@@ -258,13 +216,13 @@ def naturalsize(value, binary=False, gnu=True, format="%.1f"):
     return (format + " %s") % ((base * bytes / unit), s)
 
 
-def mesh_auto_send(conn, name):
+def mesh_auto_send(send_method, mesh_queue):
     """Auto sends messages from the queue via mesh link
     """
     while True:
-        if not conn.events.send_via_mesh.empty():
-            data = conn.events.send_via_mesh.get()
-            conn.send_broadcast(data, binary=True)
+        if not mesh_queue.empty():
+            data = mesh_queue.get()
+            send_method(data, binary=True)
         else:
             time.sleep(0.5)
 

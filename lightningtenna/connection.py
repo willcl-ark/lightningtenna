@@ -5,17 +5,15 @@ from pprint import pprint
 from time import sleep
 
 import goTenna
-import trio
 
 from config import CONFIG
 from events import Events
 from messages import handle_message
-from trio_sockets import TrioSocket
-from utilities import cli, hexdump, mesh_auto_send, naturalsize, rate_limit, segment
+from utilities import cli, hexdump, naturalsize, rate_limit, segment
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT", "%(message)s")
+    level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT")
 )
 # mute some of the other noisy loggers
 logging.getLogger("goTenna").setLevel(logging.CRITICAL)
@@ -30,7 +28,7 @@ SPI_READY = 27
 
 
 class Connection:
-    def __init__(self, name, server=0):
+    def __init__(self, name="default"):
         self.api_thread = None
         self.status = {}
         self.in_flight_events = {}
@@ -53,30 +51,11 @@ class Connection:
         self.bytes_sent = 0
         self.bytes_received = 0
         self.name = name
-        self.server = server
-        self.auto_send_thread = threading.Thread(
-            target=mesh_auto_send, args=[self, self.name]
-        )
-        self.auto_send_thread.start()
-        while not self.auto_send_thread.is_alive():
-            sleep(0.1)
-        if self.server:
-            self.socket = TrioSocket(self, "MESH")
-            self.socket_thread = threading.Thread(
-                target=trio.run, args=[self.socket.start_server], daemon=True
-            )
-            self.socket_thread.start()
-        else:
-            self.socket = TrioSocket(self, "MESH")
-            self.socket_thread = threading.Thread(
-                target=self.socket.start_client, daemon=True
-            )
-            self.socket_thread.start()
 
     def reset_connection(self):
         if self.api_thread:
             self.api_thread.join()
-        self.__init__(self.name, self.server)
+        self.__init__(self.name)
 
     @cli
     def sdk_token(self, sdk_token):
@@ -205,8 +184,8 @@ class Connection:
             Does nothing but print whether the method succeeded or failed.
             """
             method = self.in_flight_events.pop(correlation_id.bytes, "Method call")
-            if not binary:
-                if success:
+            if success:
+                if not binary:
                     if results:
                         result = {
                             "method": method,
@@ -219,16 +198,20 @@ class Connection:
                         result = {"method": method, "status": "success"}
                         self.events.callback.put(result)
                         self.log(result)
-                elif error:
-                    if not captured_error_handler[0]:
-                        captured_error_handler[0] = default_error_handler
-                        result = {
-                            "method": method,
-                            "error_details": captured_error_handler[0](details),
-                            "status": "failed",
-                        }
-                        self.events.callback.put(result)
-                        self.log(result)
+                if binary:
+                    if results:
+                        print("Sent via mesh:\n")
+                        hexdump(results)
+            elif error:
+                if not captured_error_handler[0]:
+                    captured_error_handler[0] = default_error_handler
+                    result = {
+                        "method": method,
+                        "error_details": captured_error_handler[0](details),
+                        "status": "failed",
+                    }
+                    self.events.callback.put(result)
+                    self.log(result)
 
         return callback
 
