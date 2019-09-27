@@ -9,6 +9,7 @@ python = "^3.7"
 simplejson = "3.16.0"
 trio = "0.12.1"
 wheel = "^0.33.6"
+docopt = "^0.6.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
