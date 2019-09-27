@@ -21,21 +21,25 @@ disable-dns
 log-level=io
 ```
 
-Miscellany:
-
-* Both instances of C-Lightning should be ./configured using `--enable-developer` flag in order to permit the `lightning-cli dev-suppress-gossip` command.
 
 ## Setup
 
-1) Before first start, modify the values in example_config.ini as appropriate
+1) C-Lightning on MESH and GATEWAY *must* be modified before compilation:
+    
+    1) Apply the following changes to source code for C-Lightning on MESH and GATEWAY: 
+    
+        [Increase HTLC Timeout](https://github.com/willcl-ark/lightning/commit/75c53de45c3df44a56841048bac98422f4b0a15c) 
+        
+        [Fully Suppress Gossip](https://github.com/willcl-ark/lightning/commit/14c12eca4c172ca0b8d787a0405b7346b88b70ae)
+    
 
-1) MESH and REMOTE C-Lightning must be compiled with configure flag `--enable-developer`
+1) Both instances of C-Lightning should be ./configured using `--enable-developer` flag in order to permit the `lightning-cli dev-suppress-gossip` command.
+
+1) Before first start, modify the values in example_config.ini as appropriate
 
 1) MESH should have a single peer and single channel open in C-Lightning
 
 1) On MESH, ensure C-Lightning is not running
-
-1) On MESH, in the C-Lightning source code modify `lightningd/peer_htlcs.c` and on Line 468, change `30` to `300` to give us a longer timeout on HTLCs. Now recompile C-Lightning (don't forget `./configure` flags!) with this patch.
 
 1) On MESH, access the C-Lightning database: (~/.lightning/lightningd.sqlite3). Open the `Peers` table and find the row corresponding to REMOTE (ip address and port). Modify the `address` column to have the value `127.0.0.1:9733`, or whatever you set in `example_config.ini` previously
 
