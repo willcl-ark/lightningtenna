@@ -2,6 +2,7 @@ import functools
 import logging
 import sys
 import time
+import trio
 from pprint import pprint
 
 import simplejson as json
@@ -222,12 +223,23 @@ def naturalsize(value, binary=False, gnu=True, format="%.1f"):
 
 
 async def mesh_auto_send(args):
-    """Auto sends messages from the queue via mesh link
+    """Asynchronously sends messages from the queue via mesh link
     """
     send_method, mesh_queue = args
     while True:
         async for data in mesh_queue:
             send_method(data, binary=True)
+
+
+async def mesh_to_socket_queue(args):
+    """Hack to move messages from mesh_recv queue and send them back to the socket
+    """
+    mesh_queue, socket_queue = args
+    while True:
+        if mesh_queue.empty():
+            await trio.sleep(0.5)
+        else:
+            await socket_queue.send(mesh_queue.get())
 
 
 def print_list(my_list):

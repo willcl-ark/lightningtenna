@@ -5,6 +5,7 @@ from pprint import pprint
 from time import sleep
 
 import goTenna
+import trio
 
 from config import CONFIG
 from events import Events
@@ -95,7 +96,6 @@ class Connection:
         """
         if evt.event_type == goTenna.driver.Event.MESSAGE:
             self.events.msg.put(evt)
-
             try:
                 thread = threading.Thread(
                     target=handle_message, args=[self, evt.message]

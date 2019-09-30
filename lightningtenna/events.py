@@ -1,3 +1,4 @@
+import asyncio
 import queue
 
 from utilities import de_segment, handle_event, handle_text_msg
@@ -24,7 +25,7 @@ class Events:
         self.callback._name = "callback_events"
         self.jumbo = []
         self.jumbo_len = 0
-        self.send_via_socket = send_to_trio
+        self.send_via_socket = queue.Queue()
         self.send_via_mesh = receive_from_trio
 
     def get_all_connection(self):
