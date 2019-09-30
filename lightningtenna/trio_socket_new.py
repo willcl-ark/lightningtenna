@@ -36,40 +36,34 @@ async def receiver(args):
 async def server(socket_stream):
     """Accepts new connections
     """
+    global send_to_thread, receive_from_thread
+    ident = next(CONNECTION_COUNTER)
+    try:
+        async with socket_stream:
+            async with trio.open_nursery() as nursery:
+                nursery.start_soon(sender, [socket_stream, receive_from_thread.clone()])
+                nursery.start_soon(receiver, [socket_stream, send_to_thread.clone()])
+    except Exception as exc:
+        print(f"server {ident}: crashed: {exc}")
 
-    # set up memory channels
-    send_to_thread, receive_from_trio = trio.open_memory_channel(50)
-    send_to_trio, receive_from_thread = trio.open_memory_channel(50)
 
+async def main():
     # set up the mesh connection and pass it memory channels
+    # shared between all connections to the server
     mesh_connection = setup_gotenna_conn(
         "MESH|MESH", False, send_to_trio, receive_from_trio
     )
-
-    async def serve():
-        # set up the listening server
-        ident = next(CONNECTION_COUNTER)
-        try:
-            async with socket_stream:
-                async with trio.open_nursery() as nursery:
-                    nursery.start_soon(sender, [socket_stream, receive_from_thread])
-                    nursery.start_soon(receiver, [socket_stream, send_to_thread])
-        except Exception as exc:
-            print(f"server {ident}: crashed: {exc}")
-
-    # start a nursery to run the sender and socket connections:
     async with trio.open_nursery() as nursery:
-        # start the mesh listener to send things recvd over socket out via mesh
         nursery.start_soon(
             mesh_auto_send,
             [mesh_connection.send_broadcast, mesh_connection.events.send_via_mesh],
         )
-        nursery.start_soon(serve)
+        await trio.serve_tcp(server, PORT)
 
 
-
-async def main():
-    await trio.serve_tcp(server, PORT)
-
+# set up memory channels
+# shared between all connections to the server
+send_to_thread, receive_from_trio = trio.open_memory_channel(50)
+send_to_trio, receive_from_thread = trio.open_memory_channel(50)
 
 trio.run(main)
