@@ -72,8 +72,12 @@ async def parent():
         try:
             async with socket_stream:
                 async with trio.open_nursery() as nursery:
-                    nursery.start_soon(sender, [socket_stream, receive_from_thread.clone()])
-                    nursery.start_soon(receiver, [socket_stream, send_to_thread.clone()])
+                    nursery.start_soon(
+                        sender, [socket_stream, receive_from_thread.clone()]
+                    )
+                    nursery.start_soon(
+                        receiver, [socket_stream, send_to_thread.clone()]
+                    )
         except Exception as exc:
             print(f"parent crashed: {exc}")
 

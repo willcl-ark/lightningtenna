@@ -11,8 +11,7 @@ from config import CONFIG
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-        level=logging.DEBUG,
-        format=CONFIG.get("logging", "FORMAT", fallback="%(message)s")
+    level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT", fallback="%(message)s")
 )
 
 MSG_TYPE = {2: "BROADCAST", 3: "EMERGENCY", 1: "GROUP", 0: "PRIVATE"}
@@ -79,6 +78,7 @@ def handle_text_msg(message):
 def cli(func):
     """If we are running a cli program, try to pprint stuff
     """
+
     def if_cli(*args, **kwargs):
         result = func(*args, **kwargs)
         if args[0].cli:
@@ -104,6 +104,7 @@ def print_timer(length, interval=1):
 def rate_limit(func):
     """Smart rate-limiter to 5 messages per 60 seconds
     """
+
     @functools.wraps(func)
     def limit(*args, **kwargs):
         # if we've not sent 5 in total, continue right away
@@ -253,4 +254,4 @@ async def chunk_to_list(data, chunk_len):
     """Adds data of arbitrary length to a queue in a certain chunk size
     """
     for i in range(0, len(data), chunk_len):
-        yield (data[i:i+chunk_len])
+        yield (data[i : i + chunk_len])
