@@ -42,7 +42,7 @@ class Connection:
         self._awaiting_disconnect_after_fw_update = [False]
         self.gid = (None,)
         self.geo_region = None
-        self.events = Events()
+        self.events = Events(send_to_trio, receive_from_trio)
         self.gateway = 0
         self.jumbo_thread = threading.Thread()
         self.cli = False

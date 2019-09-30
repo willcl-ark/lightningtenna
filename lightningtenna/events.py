@@ -7,7 +7,7 @@ class Events:
     """A class to store the various queues used by goTenna connection. Using queues
     ensures thread-safe management of messages sent and received
     """
-    def __init__(self):
+    def __init__(self, send_to_trio, receive_from_trio):
         self.msg = queue.Queue()
         self.msg._name = "msg_events"
         self.device_present = queue.LifoQueue()
@@ -24,8 +24,8 @@ class Events:
         self.callback._name = "callback_events"
         self.jumbo = []
         self.jumbo_len = 0
-        self.send_via_socket = queue.Queue()
-        self.send_via_mesh = queue.Queue()
+        self.send_via_socket = send_to_trio
+        self.send_via_mesh = receive_from_trio
 
     def get_all_connection(self):
         """Get all connect, disconnect and device present messages

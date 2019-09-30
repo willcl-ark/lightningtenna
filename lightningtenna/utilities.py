@@ -221,15 +221,13 @@ def naturalsize(value, binary=False, gnu=True, format="%.1f"):
     return (format + " %s") % ((base * bytes / unit), s)
 
 
-def mesh_auto_send(send_method, mesh_queue):
+async def mesh_auto_send(args):
     """Auto sends messages from the queue via mesh link
     """
+    send_method, mesh_queue = args
     while True:
-        if not mesh_queue.empty():
-            data = mesh_queue.get()
+        async for data in mesh_queue:
             send_method(data, binary=True)
-        else:
-            time.sleep(0.5)
 
 
 def print_list(my_list):
@@ -239,10 +237,8 @@ def print_list(my_list):
         print(c, v)
 
 
-def chunk_to_list(data, chunk_len):
+async def chunk_to_list(data, chunk_len):
     """Adds data of arbitrary length to a queue in a certain chunk size
     """
-    lst = []
     for i in range(0, len(data), chunk_len):
-        lst.append(data[i:i+chunk_len])
-    return lst
+        yield (data[i:i+chunk_len])
