@@ -12,14 +12,14 @@ Options:
 from docopt import docopt
 import trio
 from itertools import count
+from config import CONFIG
 from gotenna_connections import setup_gotenna_conn
 from utilities import chunk_to_list, mesh_auto_send, mesh_to_socket_queue
 
-CHUNK_SIZE = 210
-PORT = 9733
-REMOTE_HOST = "77.98.116.8"
-REMOTE_PORT = 9733
-
+RECV_SIZE = int(CONFIG["lightning"]["RECV_SIZE"])
+SERVER_PORT = int(CONFIG["lightning"]["SERVER_PORT"])
+REMOTE_HOST = CONFIG["lightning"]["REMOTE_HOST"]
+REMOTE_PORT = int(CONFIG["lightning"]["REMOTE_PORT"])
 CONNECTION_COUNTER = count()
 
 
