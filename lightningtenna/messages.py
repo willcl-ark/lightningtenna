@@ -4,7 +4,7 @@ from time import sleep, time
 
 from goTenna.payload import BinaryPayload
 
-from utilities import de_segment, naturalsize
+from utilities import de_segment, naturalsize, hexdump
 
 
 def handle_message(conn, message):
@@ -20,6 +20,7 @@ def handle_message(conn, message):
         conn.bytes_received += len(payload)
         conn.log(f"Received {naturalsize(len(payload))} -- "
                  f"Total: {naturalsize(conn.bytes_received)}")
+        conn.log(hexdump(payload))
     else:
         payload = message.payload.message
         # test for jumbo:
