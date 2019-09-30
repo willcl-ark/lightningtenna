@@ -2,10 +2,10 @@ import functools
 import logging
 import sys
 import time
-import trio
 from pprint import pprint
 
 import simplejson as json
+import trio
 
 from config import CONFIG
 
@@ -107,16 +107,23 @@ def rate_limit(func):
 
     @functools.wraps(func)
     def limit(*args, **kwargs):
-        # if we've not sent 5 in total, continue right away
-        if len(SEND_TIMES) < 5:
-            pass
-        # if our 5th oldest is older than 60 seconds ago, continue right away
-        elif SEND_TIMES[-5] < (time.time() - 60):
-            pass
-        # otherwise pause for the required amount of time
-        else:
-            wait = int(60 - (time.time() - SEND_TIMES[-5])) + 1
-            print_timer(wait)
+        while True:
+            # if we've not sent 5 in total, continue right away
+            if len(SEND_TIMES) < 5:
+                break
+            # if our 5th oldest is older than 60 seconds ago, continue right away
+            elif SEND_TIMES[-5] < (time.time() - 60):
+                break
+            # if we sent a message less than 2 seconds ago, give a slight pause
+            elif SEND_TIMES[-1] < (time.time() - 2):
+                time.sleep(2)
+                break
+            # if our last 5 were within 60 seconds, pause for the required amount of
+            # time
+            else:
+                wait = int(60 - (time.time() - SEND_TIMES[-5])) + 1
+                print_timer(wait)
+                break
 
         # add this send to the send_list
         SEND_TIMES.append(time.time())

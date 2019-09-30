@@ -6,14 +6,16 @@ Usage:
   lightningtenna.py (-h | --help)
 
 Options:
-  -h --help        Show this screen.
   -g --gateway     Start a gateway node
   -m --mesh        Start a mesh node server
+  -h --help        Show this screen.
 """
 
-from docopt import docopt
-import trio
 from itertools import count
+
+import trio
+from docopt import docopt
+
 from config import CONFIG
 from gotenna_connections import setup_gotenna_conn
 from utilities import chunk_to_list, mesh_auto_send, mesh_to_socket_queue
@@ -42,7 +44,7 @@ async def receiver(args):
     socket_stream, _send_to_thread = args
     print(f"recv socket: started!")
     async for data in socket_stream:
-        # add received data to thread_stream queue in 210B chunks
+        # add received data to thread_stream queue in RECV_SIZE sized chunks
         async for chunk in chunk_to_list(data, RECV_SIZE):
             # send it to the mesh queue
             await _send_to_thread.send(chunk)
@@ -107,7 +109,7 @@ async def main(args):
 
 
 # set up memory channels between trio and mesh connections
-# shared between all instances
+# shared between all socket connections
 send_to_thread, receive_from_trio = trio.open_memory_channel(50)
 send_to_trio, receive_from_thread = trio.open_memory_channel(50)
 

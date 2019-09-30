@@ -5,7 +5,6 @@ from pprint import pprint
 from time import sleep
 
 import goTenna
-import trio
 
 from config import CONFIG
 from events import Events

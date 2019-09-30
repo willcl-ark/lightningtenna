@@ -1,10 +1,13 @@
 import threading
 import types
+from collections import namedtuple
 from time import sleep, time
 
 from goTenna.payload import BinaryPayload
 
 from utilities import de_segment, naturalsize, hexdump
+
+MAGIC = [b"ltng"]
 
 
 def handle_message(conn, message):
@@ -18,8 +21,10 @@ def handle_message(conn, message):
         payload = message.payload._binary_data
         conn.events.send_via_socket.put(payload)
         conn.bytes_received += len(payload)
-        conn.log(f"Received {naturalsize(len(payload))} -- "
-                 f"Total: {naturalsize(conn.bytes_received)}")
+        conn.log(
+            f"Received {naturalsize(len(payload))} -- "
+            f"Total: {naturalsize(conn.bytes_received)}"
+        )
         hexdump(payload)
     else:
         payload = message.payload.message
@@ -87,3 +92,48 @@ def monitor_jumbo_msgs(conn, timeout=210):
             "Please request the message again from the remote host."
         )
     return
+
+
+"""
+Message Structure:
+
+Size    | Description
+-----------------------
+4       | Magic / Protocol
+16      | Host
+2       | Port
+4       | Checksum / Peer (ID)
+
+This will associate this checksum (peer) with this ip address/port configuration, for
+this protocol.
+
+Future messages must all be prefixed with `Checksum`.
+
+Messages not prefixed with a valid Magic or Checksum will be discarded.
+"""
+
+
+checksums = {}
+Peer = namedtuple("Peer", ["host", "port", "protocol"])
+
+
+def handle_binary_msg(msg):
+    # throw away the message if it's not in magic or the checksum DB
+    prefix = msg[0:4]
+    if prefix not in MAGIC and checksums:
+        print(f"Message prefix unknown: {msg[0:4]}")
+        return
+
+    if prefix in MAGIC:
+        if not len(msg) == 26:
+            print(f"Invalid message length for magic negotiation: {len(msg)}")
+            return
+        # add the host, port, protocol to the peer's entry in checksums
+        checksums[prefix] = Peer(msg[4:20], msg[20:22], msg[0:4])
+        print(f"Peer {prefix} added to in-memory peer dictionary")
+
+    elif prefix in checksums:
+        # if ltng protocol, just strip the header and return it for now
+        if checksums[prefix] == b"ltng":
+            print(f"Peer {prefix}'s message stripped and returned")
+            return msg[4:]
