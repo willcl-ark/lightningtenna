@@ -239,8 +239,10 @@ def print_list(my_list):
         print(c, v)
 
 
-def chunk_and_queue(data, chunk_len, queue):
+def chunk_to_list(data, chunk_len):
     """Adds data of arbitrary length to a queue in a certain chunk size
     """
+    lst = []
     for i in range(0, len(data), chunk_len):
-        queue.put(data[i:i+chunk_len])
+        lst.append(data[i:i+chunk_len])
+    return lst

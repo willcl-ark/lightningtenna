@@ -12,9 +12,7 @@ from messages import handle_message
 from utilities import cli, hexdump, naturalsize, rate_limit, segment
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT")
-)
+logging.basicConfig(level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT"))
 # mute some of the other noisy loggers
 logging.getLogger("goTenna").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.INFO)
@@ -28,7 +26,7 @@ SPI_READY = 27
 
 
 class Connection:
-    def __init__(self, name="default"):
+    def __init__(self, name="default", send_to_trio=None, receive_from_trio=None):
         self.api_thread = None
         self.status = {}
         self.in_flight_events = {}
@@ -289,7 +287,9 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                self.log(f"Sent {naturalsize(len(message))} -- Total: {naturalsize(self.bytes_sent)}")
+                self.log(
+                    f"Sent {naturalsize(len(message))} -- Total: {naturalsize(self.bytes_sent)}"
+                )
                 if binary:
                     self.log(hexdump(message))
             except ValueError:
