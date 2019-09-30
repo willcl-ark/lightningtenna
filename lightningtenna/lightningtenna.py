@@ -1,8 +1,10 @@
 """lightningtenna.py
+
 Usage:
   lightningtenna.py (-g | --gateway)
   lightningtenna.py (-m | --mesh)
   lightningtenna.py (-h | --help)
+
 Options:
   -h --help        Show this screen.
   -g --gateway     Start a gateway node
@@ -41,7 +43,7 @@ async def receiver(args):
     print(f"recv socket: started!")
     async for data in socket_stream:
         # add received data to thread_stream queue in 210B chunks
-        async for chunk in chunk_to_list(data, CHUNK_SIZE):
+        async for chunk in chunk_to_list(data, RECV_SIZE):
             print(data)
             await send_to_thread.send(chunk)
     print(f"recv socket: connection closed")
@@ -78,11 +80,13 @@ async def parent():
 
 async def main(args):
     gateway = args[0]
+    name = "GATEWAY" if gateway else "MESH"
     global send_to_trio, receive_from_trio
+
     # set up the mesh connection and pass it memory channels
     # shared between all connections to the server
     mesh_connection = setup_gotenna_conn(
-        "MESH|MESH", False, send_to_trio.clone(), receive_from_trio.clone()
+        f"{name}|MESH", False, send_to_trio.clone(), receive_from_trio.clone()
     )
     async with trio.open_nursery() as nursery:
         nursery.start_soon(
@@ -96,11 +100,11 @@ async def main(args):
         if gateway:
             await parent()
         else:
-            await trio.serve_tcp(server, PORT)
+            await trio.serve_tcp(server, SERVER_PORT)
 
 
-# set up memory channels
-# shared between all connections to the server
+# set up memory channels between trio and mesh connections
+# shared between all instances
 send_to_thread, receive_from_trio = trio.open_memory_channel(50)
 send_to_trio, receive_from_thread = trio.open_memory_channel(50)
 
