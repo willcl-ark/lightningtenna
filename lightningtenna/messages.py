@@ -20,7 +20,7 @@ def handle_message(conn, message):
         conn.bytes_received += len(payload)
         conn.log(f"Received {naturalsize(len(payload))} -- "
                  f"Total: {naturalsize(conn.bytes_received)}")
-        conn.log(hexdump(payload))
+        hexdump(payload)
     else:
         payload = message.payload.message
         # test for jumbo:

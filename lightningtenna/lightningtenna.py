@@ -28,10 +28,10 @@ CONNECTION_COUNTER = count()
 async def sender(args):
     """Sends data from the (mesh) thread, out via the socket
     """
-    socket_stream, receive_from_thread = args
+    socket_stream, _receive_from_thread = args
     print(f"send channel: started!")
     # get data from the mesh queue
-    async for data in receive_from_thread:
+    async for data in _receive_from_thread:
         # send it out via the socket
         await socket_stream.send_all(data)
 
@@ -39,13 +39,13 @@ async def sender(args):
 async def receiver(args):
     """Receives data from the socket and sends it to the (mesh) thread
     """
-    socket_stream, send_to_thread = args
+    socket_stream, _send_to_thread = args
     print(f"recv socket: started!")
     async for data in socket_stream:
         # add received data to thread_stream queue in 210B chunks
         async for chunk in chunk_to_list(data, RECV_SIZE):
-            print(data)
-            await send_to_thread.send(chunk)
+            # send it to the mesh queue
+            await _send_to_thread.send(chunk)
     print(f"recv socket: connection closed")
 
 
@@ -81,7 +81,6 @@ async def parent():
 async def main(args):
     gateway = args[0]
     name = "GATEWAY" if gateway else "MESH"
-    global send_to_trio, receive_from_trio
 
     # set up the mesh connection and pass it memory channels
     # shared between all connections to the server

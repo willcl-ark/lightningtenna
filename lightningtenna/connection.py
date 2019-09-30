@@ -291,7 +291,7 @@ class Connection:
                     f"Sent {naturalsize(len(message))} -- Total: {naturalsize(self.bytes_sent)}"
                 )
                 if binary:
-                    self.log(hexdump(message))
+                    hexdump(message)
             except ValueError:
                 self.log(
                     {
