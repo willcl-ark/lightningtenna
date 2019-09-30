@@ -24,7 +24,7 @@ CONNECTION_COUNTER = count()
 
 
 async def sender(args):
-    """Sends data from the thread out via the socket
+    """Sends data from the (mesh) thread, out via the socket
     """
     socket_stream, receive_from_thread = args
     print(f"send channel: started!")
@@ -35,7 +35,7 @@ async def sender(args):
 
 
 async def receiver(args):
-    """Receives data from the socket and sends it to the thread
+    """Receives data from the socket and sends it to the (mesh) thread
     """
     socket_stream, send_to_thread = args
     print(f"recv socket: started!")
@@ -48,7 +48,7 @@ async def receiver(args):
 
 
 async def server(socket_stream):
-    """A server to accept new connections
+    """A server to accept new connections from local lightning node.
     """
     global send_to_thread, receive_from_thread
     ident = next(CONNECTION_COUNTER)
@@ -62,17 +62,18 @@ async def server(socket_stream):
 
 
 async def parent():
-    """Will make a new outbound connection
+    """Makes a new outbound connection to a remote Lightning node.
     """
     global send_to_thread, receive_from_thread
-    socket_stream = await trio.open_tcp_stream(REMOTE_HOST, REMOTE_PORT)
-    try:
-        async with socket_stream:
-            async with trio.open_nursery() as nursery:
-                nursery.start_soon(sender, [socket_stream, receive_from_thread.clone()])
-                nursery.start_soon(receiver, [socket_stream, send_to_thread.clone()])
-    except Exception as exc:
-        print(f"parent crashed: {exc}")
+    while True:
+        socket_stream = await trio.open_tcp_stream(REMOTE_HOST, REMOTE_PORT)
+        try:
+            async with socket_stream:
+                async with trio.open_nursery() as nursery:
+                    nursery.start_soon(sender, [socket_stream, receive_from_thread.clone()])
+                    nursery.start_soon(receiver, [socket_stream, send_to_thread.clone()])
+        except Exception as exc:
+            print(f"parent crashed: {exc}")
 
 
 async def main(args):
