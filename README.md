@@ -4,9 +4,9 @@ Pay a lightning invoice over goTenna mesh network
 
 Terms:
 
-* MESH -- the off-grid machine. Has a copy of C-Lightning installed, a Blockstream satellite connection for blockchain backend, and will run lightningtenna/src/MESH_client.py to relay C-Lightning messages for a single channel, over mesh network.
+* MESH -- the off-grid machine. Has a copy of C-Lightning installed, a Blockstream satellite connection for blockchain backend, and will relay C-Lightning messages for a single channel, over mesh network.
 
-* GATEWAY -- has a connection to goTenna mesh network and also internet. Does not have C-Lightning or Bitcoin blockchain capability but will run lightningtenna/src/GATEWAY_client.py. A pure relay/proxy.
+* GATEWAY -- has a connection to goTenna mesh network and also internet. Does not require any C-Lightning or Bitcoin blockchain capability but will act as a relay/proxy for MESH.
 
 * REMOTE -- the remote channel counterpaty for the lightning channel MESH has open, not GATEWAY! Has C-Lightning running only.
 
