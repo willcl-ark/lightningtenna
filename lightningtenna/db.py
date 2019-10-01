@@ -1,7 +1,8 @@
 import os
 from os.path import expanduser
 
-from sqlalchemy import Column, MetaData, Table, create_engine
+from sqlalchemy import MetaData, Table, create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
 
 
@@ -13,26 +14,51 @@ def get_db():
     return db_path
 
 
+def populate_peers_table():
+    return Table("peers", metadata, autoload=True, autoload_with=engine)
+
+
 def list_peers():
-    # select the peers table
-    s = select([peers])
-    result = conn.execute(s)
+    with engine.connect() as conn:
+        # select the peers table
+        s = select([peers])
+        result = conn.execute(s)
 
-    peer_list = []
-    for row in result:
-        peer_list.append(dict(row))
-        # convert bytes to hex for easier id
-        peer_list[-1]["node_id"] = peer_list[-1]["node_id"].hex()
+        peer_list = []
+        for row in result:
+            peer_list.append(dict(row))
+            # convert bytes to hex for easier id
+            peer_list[-1]["node_id"] = peer_list[-1]["node_id"].hex()
 
-    print(peer_list)
+        for row in peer_list:
+            print(row)
 
 
-# TODO: revert to lightningd.sqlite3!!
-engine = create_engine(f"sqlite:///{get_db() + 'lightningd2.sqlite3'}")
+def modify_peer():
+    list_peers()
+    to_modify = input("Enter 'id' (number) of the gateway: ('c' to cancel)")
+    if to_modify == "c":
+        return
+    address = input(
+        "What ip address should we assign them? (default: 127.0.0.1): "
+        or "127.0.0.1"
+    )
+    port = input("What port should we assign them? (default: 9733): " or "9733")
+    with engine.connect() as conn:
+        up = (
+            peers.update()
+            .where(peers.c.id == to_modify)
+            .values(address=f"{address}:{port}")
+        )
+        try:
+            conn.execute(up)
+        except IntegrityError as e:
+            raise e
+
+
+engine = create_engine(f"sqlite:///{get_db() + 'lightningd.sqlite3'}")
 metadata = MetaData(engine)
-conn = engine.connect()
 
-# reflect the 'peers' table
-peers = Table("peers", metadata, autoload=True, autoload_with=engine)
+peers = populate_peers_table()
 
-list_peers()
+modify_peer()
