@@ -16,6 +16,7 @@ from itertools import count
 import trio
 from docopt import docopt
 
+import db
 from config import CONFIG
 from gotenna_connections import setup_gotenna_conn
 from utilities import chunk_to_list, mesh_auto_send, mesh_to_socket_queue
@@ -118,4 +119,5 @@ if __name__ == "__main__":
     if arguments["--gateway"]:
         trio.run(main, [True])
     if arguments["--mesh"]:
+        db.modify_peer()
         trio.run(main, [False])

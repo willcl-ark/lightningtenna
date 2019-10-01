@@ -5,6 +5,10 @@ from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
 
+from config import CONFIG
+
+SERVER_PORT = int(CONFIG["lightning"]["SERVER_PORT"])
+
 
 def get_db():
     home = expanduser("~")
@@ -24,6 +28,8 @@ def list_peers():
         s = select([peers])
         result = conn.execute(s)
 
+        print("Got peers list from C-Lightning database:\n")
+
         peer_list = []
         for row in result:
             peer_list.append(dict(row))
@@ -31,19 +37,26 @@ def list_peers():
             peer_list[-1]["node_id"] = peer_list[-1]["node_id"].hex()
 
         for row in peer_list:
-            print(row)
+            print(f"\n{row}")
+        print("\n")
 
 
 def modify_peer():
     list_peers()
-    to_modify = input("Enter 'id' (number) of the gateway: ('c' to cancel)")
+    to_modify = input("Enter 'id' (number) of the gateway ('c' to cancel/skip): ")
     if to_modify == "c":
         return
-    address = input(
-        "What ip address should we assign them? (default: 127.0.0.1): "
+    address = (
+        input("What ip address should we assign them? (default: 127.0.0.1): ")
         or "127.0.0.1"
     )
-    port = input("What port should we assign them? (default: 9733): " or "9733")
+
+    port = (
+        input(
+            f"What port should we assign them? (default from config: {SERVER_PORT}): "
+        )
+        or SERVER_PORT
+    )
     with engine.connect() as conn:
         up = (
             peers.update()
@@ -60,5 +73,3 @@ engine = create_engine(f"sqlite:///{get_db() + 'lightningd.sqlite3'}")
 metadata = MetaData(engine)
 
 peers = populate_peers_table()
-
-modify_peer()
