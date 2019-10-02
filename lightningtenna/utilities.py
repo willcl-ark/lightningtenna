@@ -1,4 +1,5 @@
 import functools
+import ipaddress
 import logging
 import sys
 import time
@@ -14,6 +15,7 @@ logging.basicConfig(
     level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT", fallback="%(message)s")
 )
 
+SERVER_PORT = int(CONFIG["lightning"]["SERVER_PORT"])
 MSG_TYPE = {2: "BROADCAST", 3: "EMERGENCY", 1: "GROUP", 0: "PRIVATE"}
 SEND_TIMES = []
 
@@ -262,3 +264,41 @@ async def chunk_to_list(data, chunk_len):
     """
     for i in range(0, len(data), chunk_len):
         yield (data[i : i + chunk_len])
+
+
+def get_id_addr_port():
+    """Ask the user for peer, IP address and port to modify as gateway
+    """
+    to_modify = input("Enter 'id' (number) of the gateway ('c' to cancel/skip): ")
+    if to_modify == "c":
+        return
+    while True:
+        address = (
+            input("What ip address should we assign them? (default: 127.0.0.1): ")
+            or "127.0.0.1"
+        )
+        try:
+            ipaddress.ip_address(address)
+            break
+        except ValueError as e:
+            print(f"Not a valid ip address {e}\n" f"Please try again")
+
+    while True:
+        try:
+            port = (
+                input(
+                    f"What port should we assign them? "
+                    f"(default from config: {SERVER_PORT}): "
+                )
+                or SERVER_PORT
+            )
+            if not port.isdigit():
+                raise TypeError
+            if 1 <= int(port) <= 65535:
+                break
+            else:
+                raise ValueError
+        except (ValueError, TypeError):
+            print(f"{port} is not a valid port number. Must be between 1 and 65535.\n")
+
+    return to_modify, address, port
