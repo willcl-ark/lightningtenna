@@ -5,12 +5,12 @@ from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
 
-from config import CONFIG
-
-SERVER_PORT = int(CONFIG["lightning"]["SERVER_PORT"])
+from utilities import get_id_addr_port
 
 
 def get_db():
+    """Get an existing C-Lightning DB path
+    """
     home = expanduser("~")
     db_path = home + "/.lightning/"
     if not os.path.exists(db_path):
@@ -19,10 +19,15 @@ def get_db():
 
 
 def populate_peers_table():
+    """Grab the contents of the peers table
+    """
     return Table("peers", metadata, autoload=True, autoload_with=engine)
 
 
 def list_peers():
+    """List each peer in the table, converting node_id binary blobs to hex for
+    easier id
+    """
     with engine.connect() as conn:
         # select the peers table
         s = select([peers])
@@ -33,7 +38,7 @@ def list_peers():
         peer_list = []
         for row in result:
             peer_list.append(dict(row))
-            # convert bytes to hex for easier id
+            # convert node_id bytes to hex
             peer_list[-1]["node_id"] = peer_list[-1]["node_id"].hex()
 
         for row in peer_list:
@@ -42,21 +47,13 @@ def list_peers():
 
 
 def modify_peer():
+    """Choose a peer from the db to modify and update the values
+    """
+    # TODO: we should save existing values first, so that we can restore them
+    #   afterwards.
     list_peers()
-    to_modify = input("Enter 'id' (number) of the gateway ('c' to cancel/skip): ")
-    if to_modify == "c":
-        return
-    address = (
-        input("What ip address should we assign them? (default: 127.0.0.1): ")
-        or "127.0.0.1"
-    )
+    to_modify, address, port = get_id_addr_port()
 
-    port = (
-        input(
-            f"What port should we assign them? (default from config: {SERVER_PORT}): "
-        )
-        or SERVER_PORT
-    )
     with engine.connect() as conn:
         up = (
             peers.update()
