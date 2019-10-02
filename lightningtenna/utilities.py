@@ -8,7 +8,7 @@ from pprint import pprint
 import simplejson as json
 import trio
 
-from config import CONFIG
+from config import CONFIG, VALID_MSGS
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -263,7 +263,7 @@ async def chunk_to_list(data, chunk_len):
     """Adds data of arbitrary length to a queue in a certain chunk size
     """
     for i in range(0, len(data), chunk_len):
-        yield (data[i : i + chunk_len])
+        yield (b"ltng" + data[i : i + chunk_len])
 
 
 def get_id_addr_port():

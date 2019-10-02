@@ -30,3 +30,6 @@ def create_config(config_file=None):
 
 
 CONFIG = create_config()
+
+# an in-memory, ephemeral list of message magic we will accept
+VALID_MSGS = [b"ltng", b"http"]

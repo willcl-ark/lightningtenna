@@ -5,9 +5,8 @@ from time import sleep, time
 
 from goTenna.payload import BinaryPayload
 
+from config import VALID_MSGS
 from utilities import de_segment, naturalsize, hexdump
-
-MAGIC = [b"ltng"]
 
 
 def handle_message(conn, message):
@@ -19,13 +18,16 @@ def handle_message(conn, message):
     """
     if isinstance(message.payload, BinaryPayload):
         payload = message.payload._binary_data
-        conn.events.send_via_socket.put(payload)
         conn.bytes_received += len(payload)
         conn.log(
-            f"Received {naturalsize(len(payload))} -- "
-            f"Total: {naturalsize(conn.bytes_received)}"
+                f"Received {naturalsize(len(payload))} -- "
+                f"Total: {naturalsize(conn.bytes_received)}"
         )
         hexdump(payload)
+        if not payload[0:4] in VALID_MSGS:
+            print("Message magic not found in VALID_MSGS. Discarding message")
+            return
+        conn.events.send_via_socket.put(payload[4:])
     else:
         payload = message.payload.message
         # test for jumbo:
