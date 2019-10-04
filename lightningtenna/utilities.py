@@ -7,20 +7,22 @@ from pprint import pprint
 
 import simplejson as json
 import trio
+from termcolor import cprint
 
-from config import CONFIG
+from config import CONFIG, VALID_MSGS
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT", fallback="%(message)s")
 )
 
-SERVER_PORT = int(CONFIG["lightning"]["SERVER_PORT"])
+
+SERVER_PORT = CONFIG["lightning"]["SERVER_PORT"]
 MSG_TYPE = {2: "BROADCAST", 3: "EMERGENCY", 1: "GROUP", 0: "PRIVATE"}
 SEND_TIMES = []
 
 
-def hexdump(data, length=16):
+def hexdump(data, recv=None, send=None, length=16):
     """Print a hexdump of data
     """
     filter = "".join([(len(repr(chr(x))) == 3) and chr(x) or "." for x in range(256)])
@@ -33,7 +35,13 @@ def hexdump(data, length=16):
             ["%s" % (((x) <= 127 and filter[(x)]) or ".") for x in chars]
         )
         lines.append("%04x  %-*s  %s\n" % (c, length * 3, hex, printable))
-    print("\n" + "".join(lines))
+    result = "\n" + "".join(lines)
+    if recv:
+        cprint(result, 'cyan')
+    elif send:
+        cprint(result, 'magenta')
+    else:
+        print(result)
 
 
 def handle_event(evt):
@@ -117,14 +125,16 @@ def rate_limit(func):
             elif SEND_TIMES[-5] < (time.time() - 60):
                 break
             # if we sent a message less than 2 seconds ago, give a slight pause
-            elif SEND_TIMES[-1] < (time.time() - 2):
+            elif SEND_TIMES[-1] > (time.time() - 2):
                 time.sleep(2)
                 break
             # if our last 5 were within 60 seconds, pause for the required amount of
             # time
             else:
                 wait = int(60 - (time.time() - SEND_TIMES[-5])) + 1
-                print_timer(wait)
+                # print_timer(wait)
+                print(f"Waiting {wait}s before next send...")
+                time.sleep(wait)
                 break
 
         # add this send to the send_list
@@ -263,7 +273,7 @@ async def chunk_to_list(data, chunk_len):
     """Adds data of arbitrary length to a queue in a certain chunk size
     """
     for i in range(0, len(data), chunk_len):
-        yield (data[i : i + chunk_len])
+        yield (b"ltng" + data[i : i + chunk_len])
 
 
 def get_id_addr_port():

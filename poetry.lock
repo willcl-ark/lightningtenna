@@ -257,6 +257,14 @@ pymysql = ["pymysql"]
 
 [[package]]
 category = "main"
+description = "ANSII Color formatting for output in terminal."
+name = "termcolor"
+optional = false
+python-versions = "*"
+version = "1.1.0"
+
+[[package]]
+category = "main"
 description = "A friendly Python library for async concurrency and I/O"
 name = "trio"
 optional = false
@@ -313,7 +321,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["pathlib2", "contextlib2", "unittest2"]
 
 [metadata]
-content-hash = "7ad4a679bc49ac361814d892f876fa2a40cf08e796059650146dffd1814a44ee"
+content-hash = "3b6cbdcef6ee682b58e1fed226cb902ebc74763f43ce8b1990d0b141b10f8443"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -341,6 +349,7 @@ six = ["3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c", "d16a
 sniffio = ["20ed6d5b46f8ae136d00b9dcb807615d83ed82ceea6b2058cecb696765246da5", "8e3810100f69fe0edd463d02ad407112542a11ffdc29f67db2bf3771afb87a21"]
 sortedcontainers = ["974e9a32f56b17c1bac2aebd9dcf197f3eb9cd30553c5852a3187ad162e1a03a", "d9e96492dd51fae31e60837736b38fe42a187b5404c16606ff7ee7cd582d4c60"]
 sqlalchemy = ["2f8ff566a4d3a92246d367f2e9cd6ed3edeef670dcd6dda6dfdc9efed88bcd80"]
+termcolor = ["1d6d69ce66211143803fbc56652b41d73b4a400a2891d7bf7a1cdf4c02de613b"]
 trio = ["149a280a4c66ef08d058626e3f48bf979e6e079777d1fc5cae71676586ced672", "d2c7dfd60e4b2a87a8ba6e106e5c5bd743df729cff444e532a76c410b22d6658"]
 urllib3 = ["3de946ffbed6e6746608990594d08faac602528ac7015ac28d33cee6a45b7398", "9a107b99a5393caf59c7aa3c1249c16e6879447533d0887f4336dde834c7be86"]
 wheel = ["10c9da68765315ed98850f8e048347c3eb06dd81822dc2ab1d4fde9dc9702646", "f4da1763d3becf2e2cd92a14a7c920f0f00eca30fdde9ea992c836685b9faf28"]

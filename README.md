@@ -24,13 +24,13 @@ log-level=io
 
 ## Setup
 
-1) C-Lightning must be v0.7.1 on MESH and GATEWAY and *must* be modified before compilation:
+1) C-Lightning must be at commit [3418e59d764531b9ed14137a1743f7fcc88b76cf](https://github.com/ElementsProject/lightning/tree/3418e59d764531b9ed14137a1743f7fcc88b76cf) on MESH and GATEWAY and both *must* be modified before compilation:
     
     1) Apply the following changes to source code for C-Lightning: 
     
-        MESH only: [Increase HTLC Timeout](https://github.com/willcl-ark/lightning/commit/75c53de45c3df44a56841048bac98422f4b0a15c) 
+        MESH only: [Increase HTLC Timeout](https://github.com/willcl-ark/lightning/commit/334b285fb2a9cfa9a783e670de3500779bbc1b2e) 
         
-        MESH and GATEWAY [Fully Suppress Gossip](https://github.com/willcl-ark/lightning/commit/14c12eca4c172ca0b8d787a0405b7346b88b70ae)
+        MESH and GATEWAY [Fully Suppress Gossip](https://github.com/willcl-ark/lightning/commit/3ee42f625e76a38aa659354a26a5321d655fb679)
     
 
 1) Both instances of C-Lightning should be ./configured using `--enable-developer` flag in order to permit the `lightning-cli dev-suppress-gossip` command.

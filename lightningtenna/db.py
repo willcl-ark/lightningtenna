@@ -52,7 +52,11 @@ def modify_peer():
     # TODO: we should save existing values first, so that we can restore them
     #   afterwards.
     list_peers()
-    to_modify, address, port = get_id_addr_port()
+
+    try:
+        to_modify, address, port = get_id_addr_port()
+    except TypeError:
+        return
 
     with engine.connect() as conn:
         up = (
