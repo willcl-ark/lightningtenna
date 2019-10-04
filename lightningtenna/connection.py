@@ -5,6 +5,7 @@ from pprint import pprint
 from time import sleep
 
 import goTenna
+from termcolor import cprint
 
 from config import CONFIG
 from events import Events
@@ -286,11 +287,13 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                self.log(
-                    f"Sent {naturalsize(len(message))} -- Total: {naturalsize(self.bytes_sent)}"
+                cprint(
+                        f"Sent {naturalsize(len(message))} -- Total: {naturalsize(self.bytes_sent)}",
+                        'magenta',
                 )
                 if binary:
-                    hexdump(message)
+                    # hexdump(message, send=True)
+                    ...
             except ValueError:
                 self.log(
                     {

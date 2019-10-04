@@ -4,6 +4,7 @@ from collections import namedtuple
 from time import sleep, time
 
 from goTenna.payload import BinaryPayload
+from termcolor import cprint
 
 from config import VALID_MSGS
 from utilities import de_segment, naturalsize, hexdump
@@ -19,11 +20,12 @@ def handle_message(conn, message):
     if isinstance(message.payload, BinaryPayload):
         payload = message.payload._binary_data
         conn.bytes_received += len(payload)
-        conn.log(
+        cprint(
                 f"Received {naturalsize(len(payload))} -- "
-                f"Total: {naturalsize(conn.bytes_received)}"
+                f"Total: {naturalsize(conn.bytes_received)}",
+                'cyan'
         )
-        hexdump(payload)
+        # hexdump(payload, recv=True)
         if not payload[0:4] in VALID_MSGS:
             print("Message magic not found in VALID_MSGS. Discarding message")
             return

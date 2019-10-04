@@ -7,6 +7,7 @@ from pprint import pprint
 
 import simplejson as json
 import trio
+from termcolor import cprint
 
 from config import CONFIG, VALID_MSGS
 
@@ -15,12 +16,12 @@ logging.basicConfig(
     level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT", fallback="%(message)s")
 )
 
-SERVER_PORT = int(CONFIG["lightning"]["SERVER_PORT"])
+SERVER_PORT = CONFIG["lightning"]["SERVER_PORT"]
 MSG_TYPE = {2: "BROADCAST", 3: "EMERGENCY", 1: "GROUP", 0: "PRIVATE"}
 SEND_TIMES = []
 
 
-def hexdump(data, length=16):
+def hexdump(data, recv=None, send=None, length=16):
     """Print a hexdump of data
     """
     filter = "".join([(len(repr(chr(x))) == 3) and chr(x) or "." for x in range(256)])
@@ -33,7 +34,13 @@ def hexdump(data, length=16):
             ["%s" % (((x) <= 127 and filter[(x)]) or ".") for x in chars]
         )
         lines.append("%04x  %-*s  %s\n" % (c, length * 3, hex, printable))
-    print("\n" + "".join(lines))
+    result = "\n" + "".join(lines)
+    if recv:
+        cprint(result, 'cyan')
+    elif send:
+        cprint(result, 'magenta')
+    else:
+        print(result)
 
 
 def handle_event(evt):
