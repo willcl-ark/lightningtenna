@@ -331,14 +331,15 @@ class Connection:
                 print("{} is not a valid GID.".format(__gid))
             return None, None
 
-    def send_private(self, gid, message):
+    def send_private(self, gid: int, message, binary=False):
         """ Send a private message to a contact
         GID is the GID to send the private message to.
         """
+        _gid, rest = self._parse_gid(gid, goTenna.settings.GID.PRIVATE)
         if not self.api_thread.connected:
             print("Must connect first")
             return
-        if not gid:
+        if not _gid:
             return
 
         def error_handler(details):
@@ -347,22 +348,26 @@ class Connection:
             return "Error sending message: {}".format(details)
 
         try:
-            method_callback = self.build_callback(error_handler)
-            payload = goTenna.payload.TextPayload(message)
+            if binary:
+                method_callback = self.build_callback(error_handler, binary=True)
+                payload = goTenna.payload.BinaryPayload(message)
+            else:
+                method_callback = self.build_callback(error_handler)
+                payload = goTenna.payload.TextPayload(message)
 
             def ack_callback(correlation_id, success):
                 if success:
                     print(
-                        "Private message to {}: delivery confirmed".format(gid.gid_val)
+                        "Private message to {}: delivery confirmed".format(_gid.gid_val)
                     )
                 else:
                     print(
                         "Private message to {}: delivery not confirmed, recipient may"
-                        " be offline or out of range".format(gid.gid_val)
+                        " be offline or out of range".format(_gid.gid_val)
                     )
 
             corr_id = self.api_thread.send_private(
-                gid,
+                _gid,
                 payload,
                 method_callback,
                 ack_callback=ack_callback,
@@ -372,7 +377,7 @@ class Connection:
             print("Message too long!")
             return
         self.in_flight_events[corr_id.bytes] = "Private message to {}: {}".format(
-            gid.gid_val, message
+            _gid.gid_val, message
         )
 
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
