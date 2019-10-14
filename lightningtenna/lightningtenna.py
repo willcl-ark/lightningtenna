@@ -1,14 +1,13 @@
 """lightningtenna.py
 
 Usage:
-  lightningtenna.py (-g | --gateway)
-  lightningtenna.py (-m | --mesh)
-  lightningtenna.py (-h | --help)
+  lightningtenna.py (--gateway | --mesh)
+  lightningtenna.py --help
 
 Options:
-  -g --gateway     Start a gateway node
-  -m --mesh        Start a mesh node server
-  -h --help        Show this screen.
+  --gateway     Start a gateway node
+  --mesh        Start a mesh node
+  --help        Show this screen.
 """
 
 from itertools import count
@@ -88,16 +87,21 @@ async def parent():
 async def main(args):
     gateway = args[0]
     name = "GATEWAY" if gateway else "MESH"
+    if gateway:
+        gid = int(CONFIG["gotenna"]["MESH_GID"])
+    else:
+        gid = int(CONFIG["gotenna"]["GATEWAY_GID"])
 
     # set up the mesh connection and pass it memory channels
     # shared between all connections to the server
     mesh_connection = setup_gotenna_conn(
-        f"{name}|MESH", False, send_to_trio.clone(), receive_from_trio.clone()
+        f"{name}|MESH", gateway, send_to_trio.clone(), receive_from_trio.clone()
     )
+
     async with trio.open_nursery() as nursery:
         nursery.start_soon(
             mesh_auto_send,
-            [mesh_connection.send_broadcast, mesh_connection.events.send_via_mesh],
+            [mesh_connection.send_private, mesh_connection.events.send_via_mesh, gid],
         )
         nursery.start_soon(
             mesh_to_socket_queue,

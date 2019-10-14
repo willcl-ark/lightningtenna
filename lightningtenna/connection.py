@@ -356,11 +356,7 @@ class Connection:
                 payload = goTenna.payload.TextPayload(message)
 
             def ack_callback(correlation_id, success):
-                if success:
-                    print(
-                        "Private message to {}: delivery confirmed".format(_gid.gid_val)
-                    )
-                else:
+                if not success:
                     print(
                         "Private message to {}: delivery not confirmed, recipient may"
                         " be offline or out of range".format(_gid.gid_val)
@@ -376,8 +372,10 @@ class Connection:
         except ValueError:
             print("Message too long!")
             return
-        self.in_flight_events[corr_id.bytes] = "Private message to {}: {}".format(
-            _gid.gid_val, message
+        self.in_flight_events[corr_id.bytes] = f"Private message to {_gid.gid_val}: {message}"
+        cprint(
+                f"Sent {naturalsize(len(message))}",
+                'magenta',
         )
 
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):

@@ -245,10 +245,10 @@ def naturalsize(value, binary=False, gnu=True, format="%.1f"):
 async def mesh_auto_send(args):
     """Asynchronously sends messages from the queue via mesh link
     """
-    send_method, mesh_queue = args
+    send_method, mesh_queue, gid = args
     while True:
         async for data in mesh_queue:
-            send_method(data, binary=True)
+            send_method(gid=gid, message=data, binary=True)
 
 
 async def mesh_to_socket_queue(args):
