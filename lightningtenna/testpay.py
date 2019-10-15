@@ -9,6 +9,7 @@ from blocksat_api import blocksat
 from hashlib import sha256
 from lightning import LightningRpc
 from termcolor import colored
+from uuid import uuid4
 
 
 home = os.path.expanduser("~")
@@ -16,7 +17,8 @@ l1 = LightningRpc(home + "/.lightning/lightning-rpc")
 
 
 def get_blocksat_invoice():
-    msg = "Hello, from the mesh!"
+    # msg = "Hello, from the mesh!"
+    msg = uuid4().hex
     print("Sending a message via the Blockstream Satellite service:")
     print(f'"{msg}"')
     print(f"\nSHA256 message digest:")
@@ -38,7 +40,7 @@ def get_blocksat_invoice():
         return False
 
 
-def pay_by_route(timeout=300):
+def pay_by_route(timeout=500):
     # invoice = input("Enter your BOLT11 invoice:\n")
     invoice, message = get_blocksat_invoice()
     if invoice:

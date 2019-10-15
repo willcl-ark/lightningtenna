@@ -10,7 +10,7 @@ from termcolor import cprint
 from config import CONFIG
 from events import Events
 from messages import handle_message
-from utilities import cli, hexdump, naturalsize, rate_limit, segment
+from utilities import cli, naturalsize, rate_dec, segment
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT"))
@@ -97,10 +97,11 @@ class Connection:
         if evt.event_type == goTenna.driver.Event.MESSAGE:
             self.events.msg.put(evt)
             try:
-                thread = threading.Thread(
-                    target=handle_message, args=[self, evt.message]
-                )
-                thread.start()
+                # thread = threading.Thread(
+                #     target=handle_message, args=[self, evt.message]
+                # )
+                # thread.start()
+                handle_message(self, evt.message)
             except Exception:
                 traceback.print_exc()
         elif evt.event_type == goTenna.driver.Event.DEVICE_PRESENT:
@@ -229,7 +230,7 @@ class Connection:
         self._settings.gid_settings = gid
         self.log(f"GID: {self.api_thread.gid.gid_val}")
 
-    @rate_limit
+    @rate_dec(private=False)
     def send_broadcast(self, message, binary=False):
         """ Send a broadcast message, if binary=True, message must be bytes
         """
@@ -287,10 +288,7 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                cprint(
-                        f"Sent {naturalsize(len(message))}",
-                        'magenta',
-                )
+                cprint(f"Sent {naturalsize(len(message))}", "magenta")
                 if binary:
                     # hexdump(message, send=True)
                     ...
@@ -331,6 +329,7 @@ class Connection:
                 print("{} is not a valid GID.".format(__gid))
             return None, None
 
+    @rate_dec(private=True)
     def send_private(self, gid: int, message, binary=False):
         """ Send a private message to a contact
         GID is the GID to send the private message to.
@@ -372,11 +371,8 @@ class Connection:
         except ValueError:
             print("Message too long!")
             return
-        self.in_flight_events[corr_id.bytes] = f"Private message to {_gid.gid_val}: {message}"
-        cprint(
-                f"Sent {naturalsize(len(message))}",
-                'magenta',
-        )
+        # self.in_flight_events[corr_id.bytes] = f"Private message to {_gid.gid_val}: {message}"
+        cprint(f"Sent {naturalsize(len(message))}", "magenta")
 
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
         msg_segments = segment(message, segment_size)

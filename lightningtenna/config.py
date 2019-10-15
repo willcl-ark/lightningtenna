@@ -8,6 +8,7 @@ config_path = home + "/.lightningtenna/"
 
 
 DEFAULT_CONFIG_FILE = config_path + "config.ini"
+SEND_TIMES = []
 
 
 def get_config_file():

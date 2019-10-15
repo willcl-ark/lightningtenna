@@ -9,7 +9,7 @@ import simplejson as json
 import trio
 from termcolor import cprint
 
-from config import CONFIG, VALID_MSGS
+from config import CONFIG, SEND_TIMES
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -19,7 +19,6 @@ logging.basicConfig(
 
 SERVER_PORT = CONFIG["lightning"]["SERVER_PORT"]
 MSG_TYPE = {2: "BROADCAST", 3: "EMERGENCY", 1: "GROUP", 0: "PRIVATE"}
-SEND_TIMES = []
 
 
 def hexdump(data, recv=None, send=None, length=16):
@@ -37,9 +36,9 @@ def hexdump(data, recv=None, send=None, length=16):
         lines.append("%04x  %-*s  %s\n" % (c, length * 3, hex, printable))
     result = "\n" + "".join(lines)
     if recv:
-        cprint(result, 'cyan')
+        cprint(result, "cyan")
     elif send:
-        cprint(result, 'magenta')
+        cprint(result, "magenta")
     else:
         print(result)
 
@@ -111,30 +110,70 @@ def print_timer(length, interval=1):
         time.sleep(1)
 
 
-def rate_limit(func):
+def rate_dec(private=False):
+    def rate_limit(func):
+        """Smart rate-limiter
+        """
+
+        @functools.wraps(func)
+        def limit(*args, **kwargs):
+            # how many can we send per minute
+            per_min = 5 if not private else 20
+            min_interval = 2
+
+            # add this send time to the list
+            time.sleep(min_interval)
+            SEND_TIMES.append(time.time())
+
+            # if we've not sent before, go!
+            if len(SEND_TIMES) <= 1:
+                return func(*args, **kwargs)
+
+            # if we've not sent 'per_min' in total, go!
+            if len(SEND_TIMES) < per_min + 1:
+                pass
+
+            # if our 'per_min'-th oldest is older than 'per_min' secs ago, go!
+            elif SEND_TIMES[-(per_min + 1)] < (time.time() - 60):
+                pass
+
+            # wait the required time
+            else:
+                wait = int(60 - (time.time() - SEND_TIMES[-(per_min + 1)])) + 1
+                print_timer(wait)
+                # print(f"Waiting {wait}s before next send...")
+                # time.sleep(wait)
+
+            # execute the send
+            return func(*args, **kwargs)
+
+        return limit
+
+    return rate_limit
+
+
+def rate_limit2(func):
     """Smart rate-limiter to 5 messages per 60 seconds
     """
 
     @functools.wraps(func)
     def limit(*args, **kwargs):
+        # add this send time to the list
+        time.sleep(2)
+        SEND_TIMES.append(time.time())
+
         while True:
-            # if we've not sent 5 in total, continue right away
-            if len(SEND_TIMES) < 5:
+            # if we've not sent one, continue right away
+            if len(SEND_TIMES) <= 1:
                 break
-            # if our 5th oldest is older than 60 seconds ago, continue right away
-            elif SEND_TIMES[-5] < (time.time() - 60):
-                break
-            # if we sent a message less than 2 seconds ago, give a slight pause
-            elif SEND_TIMES[-1] > (time.time() - 2):
-                time.sleep(2)
+            # if our 20th oldest is older than 60 seconds ago, continue right away
+            elif SEND_TIMES[-20] < (time.time() - 60):
                 break
             # if our last 5 were within 60 seconds, pause for the required amount of
             # time
             else:
-                wait = int(60 - (time.time() - SEND_TIMES[-5])) + 1
-                # print_timer(wait)
-                print(f"Waiting {wait}s before next send...")
-                time.sleep(wait)
+                wait = int(60 - (time.time() - SEND_TIMES[-21])) + 1
+                print_timer(wait)
                 break
 
         # add this send to the send_list
@@ -248,6 +287,9 @@ async def mesh_auto_send(args):
     send_method, mesh_queue, gid = args
     while True:
         async for data in mesh_queue:
+            # print(f"[DEBUG] Sending message:")
+            # hexdump(data, send=True)
+            # print(f"of length {len(data)} to gid {gid}")
             send_method(gid=gid, message=data, binary=True)
 
 

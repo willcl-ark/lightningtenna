@@ -24,9 +24,11 @@ log-level=io
 
 ## Setup
 
-1) C-Lightning must be at commit [3418e59d764531b9ed14137a1743f7fcc88b76cf](https://github.com/ElementsProject/lightning/tree/3418e59d764531b9ed14137a1743f7fcc88b76cf) on MESH and GATEWAY and both *must* be modified before compilation:
+1) C-Lightning setup:
+
+    1) Must be at commit [v0.7.3rc1](https://github.com/ElementsProject/lightning/tree/v0.7.3rc1) on MESH and GATEWAY
     
-    1) Apply the following changes to source code for C-Lightning: 
+    1) Apply the following changes to source code before compiling: 
     
         MESH only: [Increase HTLC Timeout](https://github.com/willcl-ark/lightning/commit/334b285fb2a9cfa9a783e670de3500779bbc1b2e) 
         
