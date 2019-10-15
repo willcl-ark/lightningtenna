@@ -97,11 +97,11 @@ class Connection:
         if evt.event_type == goTenna.driver.Event.MESSAGE:
             self.events.msg.put(evt)
             try:
-                # thread = threading.Thread(
-                #     target=handle_message, args=[self, evt.message]
-                # )
-                # thread.start()
-                handle_message(self, evt.message)
+                thread = threading.Thread(
+                    target=handle_message, args=[self, evt.message]
+                )
+                thread.start()
+                # handle_message(self, evt.message)
             except Exception:
                 traceback.print_exc()
         elif evt.event_type == goTenna.driver.Event.DEVICE_PRESENT:
@@ -366,7 +366,8 @@ class Connection:
                 payload,
                 method_callback,
                 ack_callback=ack_callback,
-                encrypt=self._do_encryption,
+                # encrypt=self._do_encryption,
+                encrypt=False,
             )
         except ValueError:
             print("Message too long!")
