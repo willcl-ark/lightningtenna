@@ -1,30 +1,31 @@
 import random
 
-from config import CONFIG
-from connection import Connection
+import config
+import connection
+
+cnf = config.CONFIG
+min_GID = 10000000
+max_GID = 999999999
 
 
 def setup_gotenna_conn(name, gateway, send_to_trio, receive_from_trio):
-    conn = Connection(name, send_to_trio, receive_from_trio)
-    conn.sdk_token(CONFIG["gotenna"]["SDK_TOKEN"])
+    conn = connection.Connection(name, send_to_trio, receive_from_trio)
+    conn.sdk_token(cnf["gotenna"]["SDK_TOKEN"])
     if gateway:
         conn.set_gid(
             int(
-                CONFIG.get(
-                    "gotenna",
-                    "GATEWAY_GID",
-                    fallback=random.randint(10000000, 999999999),
+                cnf.get(
+                    "gotenna", "GATEWAY_GID", fallback=random.randint(min_GID, max_GID)
                 )
             )
         )
     else:
         conn.set_gid(
             int(
-                CONFIG.get(
-                    "gotenna", "MESH_GID", fallback=random.randint(10000000, 999999999)
+                cnf.get(
+                    "gotenna", "MESH_GID", fallback=random.randint(min_GID, max_GID)
                 )
             )
         )
-
-    conn.set_geo_region(int(CONFIG.get("gotenna", "GEO_REGION", fallback=2)))
+    conn.set_geo_region(int(cnf.get("gotenna", "GEO_REGION", fallback=2)))
     return conn

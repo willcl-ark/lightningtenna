@@ -7,9 +7,9 @@ from time import sleep
 import goTenna
 from termcolor import colored
 
-from events import Events
-from messages import handle_message
-from utilities import cli, naturalsize, rate_dec, segment, hexdump
+import events
+import messages
+import utilities
 
 logger = logging.getLogger("MESH")
 
@@ -38,10 +38,10 @@ class Connection:
         self._awaiting_disconnect_after_fw_update = [False]
         self.gid = (None,)
         self.geo_region = None
-        self.events = Events(send_to_trio, receive_from_trio)
+        self.events = events.Events(send_to_trio, receive_from_trio)
         self.gateway = 0
         self.handle_message_thread = threading.Thread(
-            target=handle_message, args=[self, self.events.msg]
+            target=messages.handle_message, args=[self, self.events.msg]
         )
         self.jumbo_thread = threading.Thread()
         self.cli = False
@@ -54,7 +54,7 @@ class Connection:
             self.api_thread.join()
         self.__init__(self.name)
 
-    @cli
+    @utilities.cli
     def sdk_token(self, sdk_token):
         """set sdk_token for the connection
         """
@@ -199,7 +199,7 @@ class Connection:
                     pass
                     # if results:
                     #     print("Sent via mesh:\n")
-                    #     hexdump(results)
+                    #     utilities.hexdump(results)
             elif error:
                 if not captured_error_handler[0]:
                     captured_error_handler[0] = default_error_handler
@@ -227,7 +227,7 @@ class Connection:
         self._settings.gid_settings = gid
         logger.info(f"GID: {self.api_thread.gid.gid_val}")
 
-    @rate_dec(private=False)
+    @utilities.rate_dec(private=False)
     def send_broadcast(self, message, binary=False):
         """ Send a broadcast message, if binary=True, message must be bytes
         """
@@ -285,9 +285,9 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                logger.info(f"Sent {colored(naturalsize(len(message)), 'magenta')}")
+                logger.info(f"Sent {colored(utilities.naturalsize(len(message)), 'magenta')}")
                 if binary:
-                    # hexdump(message, send=True)
+                    # utilities.hexdump(message, send=True)
                     ...
             except ValueError:
                 logger.error(
@@ -325,7 +325,7 @@ class Connection:
                 logger.error(f"{__gid} is not a valid GID.")
             return None, None
 
-    @rate_dec(private=True)
+    @utilities.rate_dec(private=True)
     def send_private(self, gid: int, message, binary=False):
         """ Send a private message to a contact
         GID is the GID to send the private message to.
@@ -372,11 +372,11 @@ class Connection:
             corr_id.bytes
         ] = f"Private message to {_gid.gid_val}: {message}"
         digest = sha256(message).hexdigest()
-        logger.info(colored(f"Sent {naturalsize(len(message))} - {digest}", "magenta"))
-        hexdump(message, send=True)
+        logger.info(colored(f"Sent {utilities.naturalsize(len(message))} - {digest}", "magenta"))
+        utilities.hexdump(message, send=True)
 
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
-        msg_segments = segment(message, segment_size)
+        msg_segments = utilities.segment(message, segment_size)
         logger.info(f"Created segmented message with {len(msg_segments)} segments")
         # extra sanity check that we don't relay messages larger than ~1 KB
         if len(msg_segments) > 12:
@@ -391,7 +391,7 @@ class Connection:
                 i += 1
                 sleep(2)
                 self.send_broadcast(msg)
-                # logger.info(f"Sent message segment {i} of {len(msg_segments)}")
+                # logger.info(f"Sent message utilities.segment {i} of {len(msg_segments)}")
         return
         # disabled for now as requires custom message parsing
         # TODO: enable private messages here

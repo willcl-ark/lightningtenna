@@ -1,13 +1,14 @@
 """lightningtenna.py
 
 Usage:
-  lightningtenna.py (--gateway | --mesh) [--debug]
+  lightningtenna.py (--gateway | --mesh) [--debug] [--uber]
   lightningtenna.py --help
 
 Options:
   --gateway     Start a gateway node
   --mesh        Start a mesh node
   --debug       Enable debug logging to console
+  --uber        With protocol v2.0 SDK token enable higher throughput
   --help        Show this screen.
 """
 import logging
@@ -17,14 +18,17 @@ import trio
 from docopt import docopt
 
 import db
-from config import CONFIG, debug_logging
-from gotenna_connections import setup_gotenna_conn
-from utilities import chunk_to_list, mesh_auto_send, mesh_to_socket_queue
+import config
+import gotenna_connections
+import utilities
 
-RECV_SIZE = int(CONFIG["lightning"]["RECV_SIZE"])
-SERVER_PORT = int(CONFIG["lightning"]["SERVER_PORT"])
-REMOTE_HOST = CONFIG["lightning"]["REMOTE_HOST"]
-REMOTE_PORT = int(CONFIG["lightning"]["REMOTE_PORT"])
+
+cnf = config.CONFIG
+
+RECV_SIZE = int(cnf["lightning"]["RECV_SIZE"])
+SERVER_PORT = int(cnf["lightning"]["SERVER_PORT"])
+REMOTE_HOST = cnf["lightning"]["REMOTE_HOST"]
+REMOTE_PORT = int(cnf["lightning"]["REMOTE_PORT"])
 CONNECTION_COUNTER = count()
 
 
@@ -49,7 +53,7 @@ async def receiver(args):
     logger.info(f"recv socket: started!")
     async for data in socket_stream:
         # add received data to thread_stream queue in RECV_SIZE sized chunks
-        async for chunk in chunk_to_list(data, RECV_SIZE):
+        async for chunk in utilities.chunk_to_list(data, RECV_SIZE):
             # send it to the mesh queue
             await _send_to_thread.send(chunk)
     logger.warning(f"recv socket: connection closed")
@@ -92,23 +96,23 @@ async def main(args):
     gateway = args[0]
     name = "GATEWAY" if gateway else "MESH"
     if gateway:
-        gid = int(CONFIG["gotenna"]["MESH_GID"])
+        gid = int(cnf["gotenna"]["MESH_GID"])
     else:
-        gid = int(CONFIG["gotenna"]["GATEWAY_GID"])
+        gid = int(cnf["gotenna"]["GATEWAY_GID"])
 
     # set up the mesh connection and pass it memory channels
     # shared between all connections to the server
-    mesh_connection = setup_gotenna_conn(
+    mesh_connection = gotenna_connections.setup_gotenna_conn(
         f"{name}|MESH", gateway, send_to_trio.clone(), receive_from_trio.clone()
     )
 
     async with trio.open_nursery() as nursery:
         nursery.start_soon(
-            mesh_auto_send,
+            utilities.mesh_auto_send,
             [mesh_connection.send_private, mesh_connection.events.send_via_mesh, gid],
         )
         nursery.start_soon(
-            mesh_to_socket_queue,
+            utilities.mesh_to_socket_queue,
             [mesh_connection.events.send_via_socket, send_to_trio.clone()],
         )
         if gateway:
@@ -125,7 +129,9 @@ send_to_trio, receive_from_thread = trio.open_memory_channel(50)
 if __name__ == "__main__":
     arguments = docopt(__doc__)
     if arguments["--debug"]:
-        debug_logging()
+        config.debug_logging()
+    if arguments["--uber"]:
+        config.UBER = True
     if arguments["--gateway"]:
         trio.run(main, [True])
     if arguments["--mesh"]:

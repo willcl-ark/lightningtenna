@@ -1,7 +1,6 @@
 import functools
 import ipaddress
 import logging
-import sys
 import time
 from pprint import pprint
 
@@ -9,13 +8,13 @@ import simplejson as json
 import trio
 from termcolor import colored
 
-from config import CONFIG, SEND_TIMES
+import config
 
 logger = logging.getLogger("UTIL")
 mesh_logger = logging.getLogger("MESH")
 
 
-SERVER_PORT = CONFIG["lightning"]["SERVER_PORT"]
+SERVER_PORT = config.CONFIG["lightning"]["SERVER_PORT"]
 MSG_TYPE = {2: "BROADCAST", 3: "EMERGENCY", 1: "GROUP", 0: "PRIVATE"}
 
 
@@ -99,16 +98,16 @@ def cli(func):
 def print_timer(length, interval=1):
     """Will print a pretty timer to the console while we wait for something to complete
     """
+    mesh_logger.info(f"Waiting {length} seconds due to bandwidth restrictions")
+
     for remaining in range(length, 0, interval * -1):
-        sys.stdout.write("\r")
-        sys.stdout.write(
-            "Waiting for {:2d} seconds due to bandwidth restrictions.".format(remaining)
-        )
-        sys.stdout.flush()
+        if remaining % 10 == 0:
+            mesh_logger.info(f"{remaining} seconds remaining")
         time.sleep(1)
 
 
 def rate_dec(private=False):
+
     def rate_limit(func):
         """Smart rate-limiter
         """
@@ -120,28 +119,26 @@ def rate_dec(private=False):
             min_interval = 0.5
 
             # add this send time to the list
-            SEND_TIMES.append(time.time())
+            config.SEND_TIMES.append(time.time())
 
             # if we've not sent before, send!
-            if len(SEND_TIMES) <= 1:
+            if len(config.SEND_TIMES) <= 1:
                 pass
 
             # if we've not sent 'per_min' in total, sleep & send!
-            elif len(SEND_TIMES) < per_min + 1:
+            elif len(config.SEND_TIMES) < per_min + 1:
                 time.sleep(min_interval)
                 pass
 
             # if our 'per_min'-th oldest is older than 'per_min' secs ago, go!
-            elif SEND_TIMES[-(per_min + 1)] < (time.time() - 60):
+            elif config.SEND_TIMES[-(per_min + 1)] < (time.time() - 60):
                 time.sleep(min_interval)
                 pass
 
             # wait the required time
             else:
-                wait = int(60 - (time.time() - SEND_TIMES[-(per_min + 1)])) + 1
+                wait = int(60 - (time.time() - config.SEND_TIMES[-(per_min + 1)])) + 1
                 print_timer(wait)
-                # print(f"Waiting {wait}s before next send...")
-                # time.sleep(wait)
 
             # execute the send
             return func(*args, **kwargs)

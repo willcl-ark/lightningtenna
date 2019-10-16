@@ -11,6 +11,7 @@ config_path = home + "/.lightningtenna/"
 
 DEFAULT_CONFIG_FILE = config_path + "config.ini"
 SEND_TIMES = []
+UBER = False
 
 # logging
 LOG_FILENAME = f"{config_path}lightningtenna.log"

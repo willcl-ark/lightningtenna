@@ -6,7 +6,7 @@ from sqlalchemy import MetaData, Table, create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import select
 
-from utilities import get_id_addr_port
+import utilities
 
 
 logger = logging.getLogger('database')
@@ -58,7 +58,7 @@ def modify_peer():
     list_peers()
 
     try:
-        to_modify, address, port = get_id_addr_port()
+        to_modify, address, port = utilities.get_id_addr_port()
     except TypeError:
         return
 

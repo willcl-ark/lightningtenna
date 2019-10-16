@@ -1,7 +1,6 @@
-import asyncio
 import queue
 
-from utilities import de_segment, handle_event, handle_text_msg
+import utilities
 
 
 class Events:
@@ -38,7 +37,7 @@ class Events:
         for q in queues:
             lst = []
             while not q.empty():
-                lst.append(handle_event(q.get()))
+                lst.append(utilities.handle_event(q.get()))
             result[q._name] = lst
 
         return result
@@ -73,7 +72,7 @@ class Events:
         m = self.get_all_messages()
         m2 = self.filter_messages(m)
         for msg in m2:
-            msgs.append(handle_text_msg(msg))
+            msgs.append(utilities.handle_text_msg(msg))
         result[self.msg._name] = msgs
         return result
 
@@ -82,7 +81,7 @@ class Events:
         m2 = self.filter_messages(m, jumbo=True)
         message_list = [msg.message.payload.message for msg in m2]
         message_list.sort()
-        return de_segment(message_list)
+        return utilities.de_segment(message_list)
 
     def get_all_callback(self):
         """Returns a dict, where the first entry contains a list of callback messages
