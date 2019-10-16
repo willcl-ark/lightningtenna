@@ -95,3 +95,5 @@ urllib3==1.25.6 \
 wheel==0.33.6 \
     --hash=sha256:10c9da68765315ed98850f8e048347c3eb06dd81822dc2ab1d4fde9dc9702646 \
     --hash=sha256:f4da1763d3becf2e2cd92a14a7c920f0f00eca30fdde9ea992c836685b9faf28
+
+https://github.com/gotenna/PublicSDK/raw/master/python-public-sdk/goTenna-0.12.5-py3-none-any.whl
