@@ -49,9 +49,11 @@ def pay_by_route(timeout=500):
         route = l1.getroute(decoded["payee"], decoded["msatoshi"], 0)["route"]
         # print("Got a route")
         print("Sending lightning HTLC via the mesh...")
+        # print(f"lightning-cli sendpay {route} {decoded['payment_hash']}")
         l1.sendpay(route, decoded["payment_hash"])
         print("Sent to mesh successfully. Waiting for response...")
         time.sleep(2)
+        print(f"lightning-cli waitsendpay {decoded['payment_hash']} {timeout}")
         result = l1.waitsendpay(decoded["payment_hash"], timeout)
         print(colored("\nComplete! Invoice payment accepted.\n", 'green'))
         print(f"Message sent: {colored(message, 'magenta')}")
