@@ -3,7 +3,6 @@ import ipaddress
 import logging
 import sys
 import time
-from hashlib import sha256
 from pprint import pprint
 
 import simplejson as json
@@ -12,7 +11,8 @@ from termcolor import colored
 
 from config import CONFIG, SEND_TIMES
 
-logger = logging.getLogger("utility")
+logger = logging.getLogger("UTIL")
+mesh_logger = logging.getLogger("MESH")
 
 
 SERVER_PORT = CONFIG["lightning"]["SERVER_PORT"]
@@ -34,9 +34,9 @@ def hexdump(data, recv=None, send=None, length=16):
         lines.append("%04x  %-*s  %s\n" % (c, length * 3, hex, printable))
     result = "\n" + "".join(lines)
     if recv:
-        logger.debug(colored(result, "cyan"))
+        mesh_logger.debug(colored(result, "cyan"))
     elif send:
-        logger.debug(colored(result, "magenta"))
+        mesh_logger.debug(colored(result, "magenta"))
     else:
         logger.debug(result)
 
@@ -246,10 +246,6 @@ async def mesh_auto_send(args):
     send_method, mesh_queue, gid = args
     while True:
         async for data in mesh_queue:
-            logger.debug(
-                f"Sending message:\n{colored(sha256(data).hexdigest(), 'magenta')}"
-            )
-            hexdump(data, send=True)
             send_method(gid=gid, message=data, binary=True)
 
 

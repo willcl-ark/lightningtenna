@@ -12,7 +12,8 @@ from config import VALID_MSGS
 from utilities import de_segment, naturalsize, hexdump
 
 
-logger = logging.getLogger('msg_handler')
+logger = logging.getLogger('MSGS')
+mesh_logger = logging.getLogger("MESH")
 
 
 def handle_message(conn, queue):
@@ -34,11 +35,8 @@ def handle_message(conn, queue):
                 payload = message.payload._binary_data
                 digest = sha256(payload).hexdigest()
                 conn.bytes_received += len(payload)
-                # cprint(f"Received {naturalsize(len(payload))} - {digest}", "cyan")
-                logger.info(colored(f"Received {naturalsize(len(payload))} - {digest}", "cyan"))
-                # hexdump(payload, recv=True)
+                mesh_logger.info(colored(f"Received {naturalsize(len(payload))} - {digest}", "cyan"))
                 if not payload[0:4] in VALID_MSGS:
-                    # print("Message magic not found in VALID_MSGS. Discarding message")
                     logger.error("Message magic not found in VALID_MSGS. Discarding message")
                     return
                 conn.events.send_via_socket.put(payload[4:])

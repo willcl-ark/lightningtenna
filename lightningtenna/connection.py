@@ -9,9 +9,9 @@ from termcolor import colored
 
 from events import Events
 from messages import handle_message
-from utilities import cli, naturalsize, rate_dec, segment
+from utilities import cli, naturalsize, rate_dec, segment, hexdump
 
-logger = logging.getLogger("mesh_connection")
+logger = logging.getLogger("MESH")
 
 # For SPI connection only, set SPI_CONNECTION to true with proper SPI settings
 SPI_CONNECTION = False
@@ -373,6 +373,7 @@ class Connection:
         ] = f"Private message to {_gid.gid_val}: {message}"
         digest = sha256(message).hexdigest()
         logger.info(colored(f"Sent {naturalsize(len(message))} - {digest}", "magenta"))
+        hexdump(message, send=True)
 
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
         msg_segments = segment(message, segment_size)

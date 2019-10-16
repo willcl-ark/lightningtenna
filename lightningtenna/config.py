@@ -26,7 +26,7 @@ logging.basicConfig(
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 # set a format which is simpler for console use
-formatter = logging.Formatter("%(name)-15s: %(levelname)-8s %(message)s")
+formatter = logging.Formatter("%(name)-6s: %(levelname)-8s %(message)s")
 # tell the console handler to use this format
 ch.setFormatter(formatter)
 # enable log file rotation
@@ -35,6 +35,15 @@ rh = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=500000, backupC
 logging.getLogger("").addHandler(ch)
 logging.getLogger("").addHandler(rh)
 logging.getLogger("goTenna").setLevel(logging.CRITICAL)
+
+
+def debug_logging():
+    logging.getLogger("").removeHandler(ch)
+    ch2 = logging.StreamHandler()
+    ch2.setLevel(logging.DEBUG)
+    ch2.setFormatter(formatter)
+    logging.getLogger("").addHandler(ch2)
+    logging.getLogger("goTenna").setLevel(logging.DEBUG)
 
 
 # config file handling

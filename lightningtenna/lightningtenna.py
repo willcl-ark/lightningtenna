@@ -1,12 +1,13 @@
 """lightningtenna.py
 
 Usage:
-  lightningtenna.py (--gateway | --mesh)
+  lightningtenna.py (--gateway | --mesh) [--debug]
   lightningtenna.py --help
 
 Options:
   --gateway     Start a gateway node
   --mesh        Start a mesh node
+  --debug       Enable debug logging to console
   --help        Show this screen.
 """
 import logging
@@ -16,7 +17,7 @@ import trio
 from docopt import docopt
 
 import db
-from config import CONFIG
+from config import CONFIG, debug_logging
 from gotenna_connections import setup_gotenna_conn
 from utilities import chunk_to_list, mesh_auto_send, mesh_to_socket_queue
 
@@ -27,7 +28,7 @@ REMOTE_PORT = int(CONFIG["lightning"]["REMOTE_PORT"])
 CONNECTION_COUNTER = count()
 
 
-logger = logging.getLogger('lightningtenna')
+logger = logging.getLogger('SERVER')
 
 
 async def sender(args):
@@ -123,6 +124,8 @@ send_to_trio, receive_from_thread = trio.open_memory_channel(50)
 
 if __name__ == "__main__":
     arguments = docopt(__doc__)
+    if arguments["--debug"]:
+        debug_logging()
     if arguments["--gateway"]:
         trio.run(main, [True])
     if arguments["--mesh"]:
