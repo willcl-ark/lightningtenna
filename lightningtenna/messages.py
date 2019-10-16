@@ -9,7 +9,7 @@ from goTenna.payload import BinaryPayload, CustomPayload
 from termcolor import colored
 
 from config import VALID_MSGS
-from utilities import de_segment, naturalsize, hexdump
+from utilities import de_segment, naturalsize
 
 
 logger = logging.getLogger('MSGS')
