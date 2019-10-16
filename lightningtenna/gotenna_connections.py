@@ -10,7 +10,10 @@ max_GID = 999999999
 
 def setup_gotenna_conn(name, gateway, send_to_trio, receive_from_trio):
     conn = connection.Connection(name, send_to_trio, receive_from_trio)
-    conn.sdk_token(cnf["gotenna"]["SDK_TOKEN"])
+    if config.UBER:
+        conn.sdk_token(cnf["gotenna"]["UBER_TOKEN"])
+    else:
+        conn.sdk_token(cnf["gotenna"]["SDK_TOKEN"])
     if gateway:
         conn.set_gid(
             int(
