@@ -115,7 +115,10 @@ def rate_dec(private=False):
         @functools.wraps(func)
         def limit(*args, **kwargs):
             # how many can we send per minute
-            per_min = 5 if not private else 999
+            if not config.UBER:
+                per_min = 5
+            else:
+                per_min = 5 if not private else 999
             min_interval = 0.5
 
             # add this send time to the list
