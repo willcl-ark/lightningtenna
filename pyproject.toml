@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lightningtenna"
-version = "0.2.0"
+version = "0.2.1"
 description = ""
 authors = ["willcl-ark <will8clark@gmail.com>"]
 
