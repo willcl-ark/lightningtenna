@@ -1,3 +1,5 @@
+import logging
+import logging.handlers
 import os
 from configparser import RawConfigParser
 from shutil import copyfile
@@ -10,7 +12,32 @@ config_path = home + "/.lightningtenna/"
 DEFAULT_CONFIG_FILE = config_path + "config.ini"
 SEND_TIMES = []
 
+# logging
+LOG_FILENAME = f"{config_path}lightningtenna.log"
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s %(name)-15s %(levelname)-8s %(message)s",
+    datefmt="%m-%d %H:%M",
+    filename=LOG_FILENAME,
+    filemode="w",
+)
+# define a Handler which writes INFO messages or higher to the sys.stderr
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+# set a format which is simpler for console use
+formatter = logging.Formatter("%(name)-15s: %(levelname)-8s %(message)s")
+# tell the console handler to use this format
+ch.setFormatter(formatter)
+# enable log file rotation
+rh = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=500000, backupCount=2)
+# add the console and file handlers to the root logger
+logging.getLogger("").addHandler(ch)
+logging.getLogger("").addHandler(rh)
+logging.getLogger("goTenna").setLevel(logging.CRITICAL)
+
+
+# config file handling
 def get_config_file():
     if not os.path.exists(config_path):
         print(f"Config file not found, copying example config... to {config_path}")

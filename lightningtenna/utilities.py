@@ -3,18 +3,16 @@ import ipaddress
 import logging
 import sys
 import time
+from hashlib import sha256
 from pprint import pprint
 
 import simplejson as json
 import trio
-from termcolor import cprint
+from termcolor import colored
 
 from config import CONFIG, SEND_TIMES
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT", fallback="%(message)s")
-)
+logger = logging.getLogger("utility")
 
 
 SERVER_PORT = CONFIG["lightning"]["SERVER_PORT"]
@@ -36,11 +34,11 @@ def hexdump(data, recv=None, send=None, length=16):
         lines.append("%04x  %-*s  %s\n" % (c, length * 3, hex, printable))
     result = "\n" + "".join(lines)
     if recv:
-        cprint(result, "cyan")
+        logger.debug(colored(result, "cyan"))
     elif send:
-        cprint(result, "magenta")
+        logger.debug(colored(result, "magenta"))
     else:
-        print(result)
+        logger.debug(result)
 
 
 def handle_event(evt):
@@ -118,23 +116,24 @@ def rate_dec(private=False):
         @functools.wraps(func)
         def limit(*args, **kwargs):
             # how many can we send per minute
-            per_min = 5 if not private else 20
-            min_interval = 2
+            per_min = 5 if not private else 999
+            min_interval = 0.5
 
             # add this send time to the list
-            time.sleep(min_interval)
             SEND_TIMES.append(time.time())
 
-            # if we've not sent before, go!
+            # if we've not sent before, send!
             if len(SEND_TIMES) <= 1:
-                return func(*args, **kwargs)
+                pass
 
-            # if we've not sent 'per_min' in total, go!
-            if len(SEND_TIMES) < per_min + 1:
+            # if we've not sent 'per_min' in total, sleep & send!
+            elif len(SEND_TIMES) < per_min + 1:
+                time.sleep(min_interval)
                 pass
 
             # if our 'per_min'-th oldest is older than 'per_min' secs ago, go!
             elif SEND_TIMES[-(per_min + 1)] < (time.time() - 60):
+                time.sleep(min_interval)
                 pass
 
             # wait the required time
@@ -152,39 +151,6 @@ def rate_dec(private=False):
     return rate_limit
 
 
-def rate_limit2(func):
-    """Smart rate-limiter to 5 messages per 60 seconds
-    """
-
-    @functools.wraps(func)
-    def limit(*args, **kwargs):
-        # add this send time to the list
-        time.sleep(2)
-        SEND_TIMES.append(time.time())
-
-        while True:
-            # if we've not sent one, continue right away
-            if len(SEND_TIMES) <= 1:
-                break
-            # if our 20th oldest is older than 60 seconds ago, continue right away
-            elif SEND_TIMES[-20] < (time.time() - 60):
-                break
-            # if our last 5 were within 60 seconds, pause for the required amount of
-            # time
-            else:
-                wait = int(60 - (time.time() - SEND_TIMES[-21])) + 1
-                print_timer(wait)
-                break
-
-        # add this send to the send_list
-        SEND_TIMES.append(time.time())
-
-        # execute the send
-        return func(*args, **kwargs)
-
-    return limit
-
-
 def segment(msg, segment_size: int):
     """
     :param msg: string or json-compatible object
@@ -195,7 +161,7 @@ def segment(msg, segment_size: int):
         if not isinstance(msg, str):
             msg = json.dumps(msg)
     except Exception as e:
-        logger.debug(e)
+        logger.error(e)
         return
     prefix = "sm"
     msg_length = len(msg)
@@ -233,13 +199,6 @@ def de_segment(segment_list: list):
         a, b, c, msg = i.split("/")
         result += msg
     return result
-
-
-def log(message, cli):
-    if cli:
-        print(message)
-    else:
-        logger.debug(message)
 
 
 suffixes = {
@@ -287,9 +246,10 @@ async def mesh_auto_send(args):
     send_method, mesh_queue, gid = args
     while True:
         async for data in mesh_queue:
-            # print(f"[DEBUG] Sending message:")
-            # hexdump(data, send=True)
-            # print(f"of length {len(data)} to gid {gid}")
+            logger.debug(
+                f"Sending message:\n{colored(sha256(data).hexdigest(), 'magenta')}"
+            )
+            hexdump(data, send=True)
             send_method(gid=gid, message=data, binary=True)
 
 
@@ -305,7 +265,7 @@ async def mesh_to_socket_queue(args):
 
 
 def print_list(my_list):
-    """Print a nicely formatted enumerate list
+    """Print a nicely formatted enumerated list
     """
     for c, v in enumerate(my_list):
         print(c, v)
@@ -332,8 +292,8 @@ def get_id_addr_port():
         try:
             ipaddress.ip_address(address)
             break
-        except ValueError as e:
-            print(f"Not a valid ip address {e}\n" f"Please try again")
+        except ValueError:
+            logger.exception(f"Not a valid ip address. Please try again")
 
     while True:
         try:
@@ -351,6 +311,8 @@ def get_id_addr_port():
             else:
                 raise ValueError
         except (ValueError, TypeError):
-            print(f"{port} is not a valid port number. Must be between 1 and 65535.\n")
+            logger.exception(
+                f"{port} is not a valid port number. Must be between 1 and 65535.\n"
+            )
 
     return to_modify, address, port

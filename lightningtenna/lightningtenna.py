@@ -9,7 +9,7 @@ Options:
   --mesh        Start a mesh node
   --help        Show this screen.
 """
-
+import logging
 from itertools import count
 
 import trio
@@ -27,11 +27,14 @@ REMOTE_PORT = int(CONFIG["lightning"]["REMOTE_PORT"])
 CONNECTION_COUNTER = count()
 
 
+logger = logging.getLogger('lightningtenna')
+
+
 async def sender(args):
     """Sends data from the (mesh) thread, out via the socket
     """
     socket_stream, _receive_from_thread = args
-    print(f"send channel: started!")
+    logger.info(f"send channel: started!")
     # get data from the mesh queue
     async for data in _receive_from_thread:
         # send it out via the socket
@@ -42,13 +45,13 @@ async def receiver(args):
     """Receives data from the socket and sends it to the (mesh) thread
     """
     socket_stream, _send_to_thread = args
-    print(f"recv socket: started!")
+    logger.info(f"recv socket: started!")
     async for data in socket_stream:
         # add received data to thread_stream queue in RECV_SIZE sized chunks
         async for chunk in chunk_to_list(data, RECV_SIZE):
             # send it to the mesh queue
             await _send_to_thread.send(chunk)
-    print(f"recv socket: connection closed")
+    logger.warning(f"recv socket: connection closed")
 
 
 async def server(socket_stream):
@@ -61,8 +64,8 @@ async def server(socket_stream):
             async with trio.open_nursery() as nursery:
                 nursery.start_soon(sender, [socket_stream, receive_from_thread.clone()])
                 nursery.start_soon(receiver, [socket_stream, send_to_thread.clone()])
-    except Exception as exc:
-        print(f"server {ident}: crashed: {exc}")
+    except Exception:
+        logger.exception(f"server {ident}: crashed")
 
 
 async def parent():
@@ -80,8 +83,8 @@ async def parent():
                     nursery.start_soon(
                         receiver, [socket_stream, send_to_thread.clone()]
                     )
-        except Exception as exc:
-            print(f"parent crashed: {exc}")
+        except Exception:
+            logger.exception(f"parent crashed")
 
 
 async def main(args):

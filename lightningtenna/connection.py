@@ -1,22 +1,17 @@
 import logging
 import threading
 import traceback
-from pprint import pprint
+from hashlib import sha256
 from time import sleep
 
 import goTenna
-from termcolor import cprint
+from termcolor import colored
 
-from config import CONFIG
 from events import Events
 from messages import handle_message
 from utilities import cli, naturalsize, rate_dec, segment
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format=CONFIG.get("logging", "FORMAT"))
-# mute some of the other noisy loggers
-logging.getLogger("goTenna").setLevel(logging.CRITICAL)
-logging.getLogger("urllib3").setLevel(logging.INFO)
+logger = logging.getLogger("mesh_connection")
 
 # For SPI connection only, set SPI_CONNECTION to true with proper SPI settings
 SPI_CONNECTION = False
@@ -45,6 +40,9 @@ class Connection:
         self.geo_region = None
         self.events = Events(send_to_trio, receive_from_trio)
         self.gateway = 0
+        self.handle_message_thread = threading.Thread(
+            target=handle_message, args=[self, self.events.msg]
+        )
         self.jumbo_thread = threading.Thread()
         self.cli = False
         self.bytes_sent = 0
@@ -61,7 +59,7 @@ class Connection:
         """set sdk_token for the connection
         """
         if self.api_thread:
-            self.log("To change SDK tokens, restart the sample app.")
+            logger.info("To change SDK tokens, restart the sample app.")
             return
         try:
             if not SPI_CONNECTION:
@@ -84,10 +82,10 @@ class Connection:
                 )
             self.api_thread.start()
         except ValueError:
-            self.log(
+            logger.error(
                 f"SDK token {sdk_token} is not valid. Please enter a valid SDK token."
             )
-        # self.log(f"SDK_TOKEN: {self.api_thread.sdk_token.decode('utf-8')}")
+        logger.debug(f"SDK_TOKEN: {self.api_thread.sdk_token.decode('utf-8')}")
 
     def event_callback(self, evt):
         """ The event callback that will store even messages from the API.
@@ -97,34 +95,33 @@ class Connection:
         if evt.event_type == goTenna.driver.Event.MESSAGE:
             self.events.msg.put(evt)
             try:
-                thread = threading.Thread(
-                    target=handle_message, args=[self, evt.message]
-                )
-                thread.start()
-                # handle_message(self, evt.message)
+                if self.handle_message_thread.is_alive():
+                    pass
+                else:
+                    self.handle_message_thread.start()
             except Exception:
                 traceback.print_exc()
         elif evt.event_type == goTenna.driver.Event.DEVICE_PRESENT:
             self.events.device_present.put(evt)
             if self._awaiting_disconnect_after_fw_update[0]:
-                self.log("Device physically connected")
+                logger.info("Device physically connected")
             else:
-                self.log("Device physically connected, configure to continue")
+                logger.info("Device physically connected, configure to continue")
         elif evt.event_type == goTenna.driver.Event.CONNECT:
             self.events.connect.put(evt)
             if self._awaiting_disconnect_after_fw_update[0]:
-                self.log("Device reconnected! Firmware update complete!")
+                logger.info("Device reconnected! Firmware update complete!")
                 self._awaiting_disconnect_after_fw_update[0] = False
             else:
-                self.log("Connected!")
+                logger.info("Connected!")
         elif evt.event_type == goTenna.driver.Event.DISCONNECT:
             self.events.disconnect.put(evt)
             if self._awaiting_disconnect_after_fw_update[0]:
                 # Do not reset configuration so that the device will reconnect on its
                 # own
-                self.log("Firmware update: Device disconnected, awaiting reconnect")
+                logger.info("Firmware update: Device disconnected, awaiting reconnect")
             else:
-                self.log("Disconnected! {}".format(evt))
+                logger.info("Disconnected! {}".format(evt))
                 # We reset the configuration here so that if the user plugs in a
                 # different device it is not immediately reconfigured with new and
                 # incorrect data
@@ -142,7 +139,7 @@ class Connection:
                 if member.gid_val == self.api_thread.gid.gid_val:
                     index = idx
                     break
-            self.log(
+            logger.info(
                 "Added to group {}: You are member {}".format(
                     evt.group.gid.gid_val, index
                 )
@@ -164,8 +161,8 @@ class Connection:
                 goTenna.constants.ErrorCodes.OSERROR,
                 goTenna.constants.ErrorCodes.EXCEPTION,
             ]:
-                self.log("USB connection disrupted")
-            self.log(f"Error: {details['code']}: {details['msg']}")
+                logger.warning("USB connection disrupted")
+            logger.error(f"Error: {details['code']}: {details['msg']}")
 
         # Define a second function here so it implicitly captures self
         captured_error_handler = [error_handler]
@@ -192,11 +189,11 @@ class Connection:
                             "status": "Success",
                         }
                         self.events.callback.put(result)
-                        self.log(result)
+                        logger.info(result)
                     else:
                         result = {"method": method, "status": "success"}
                         self.events.callback.put(result)
-                        self.log(result)
+                        logger.info(result)
                 if binary:
                     # TODO: result not being returned for binary payloads
                     pass
@@ -212,7 +209,7 @@ class Connection:
                         "status": "failed",
                     }
                     self.events.callback.put(result)
-                    self.log(result)
+                    logger.info(result)
 
         return callback
 
@@ -221,21 +218,21 @@ class Connection:
         GID should be a 15-digit numerical GID.
         """
         if self.api_thread.connected:
-            self.log("Must not be connected when setting GID")
+            logger.info("Must not already be connected when setting GID")
             return
         (_gid, _) = self._parse_gid(gid, goTenna.settings.GID.PRIVATE)
         if not _gid:
             return
         self.api_thread.set_gid(_gid)
         self._settings.gid_settings = gid
-        self.log(f"GID: {self.api_thread.gid.gid_val}")
+        logger.info(f"GID: {self.api_thread.gid.gid_val}")
 
     @rate_dec(private=False)
     def send_broadcast(self, message, binary=False):
         """ Send a broadcast message, if binary=True, message must be bytes
         """
         if not self.api_thread.connected:
-            self.log(
+            logger.error(
                 {
                     "send_broadcast": {
                         "status": "failed",
@@ -252,7 +249,7 @@ class Connection:
                     goTenna.constants.ErrorCodes.TIMEOUT,
                     goTenna.constants.ErrorCodes.OSERROR,
                 ]:
-                    self.log(
+                    logger.error(
                         {
                             "send_broadcast": {
                                 "status": "failed",
@@ -261,7 +258,7 @@ class Connection:
                             }
                         }
                     )
-                self.log(
+                logger.error(
                     {
                         "send_broadcast": {
                             "status": "failed",
@@ -288,12 +285,12 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                cprint(f"Sent {naturalsize(len(message))}", "magenta")
+                logger.info(f"Sent {colored(naturalsize(len(message)), 'magenta')}")
                 if binary:
                     # hexdump(message, send=True)
                     ...
             except ValueError:
-                self.log(
+                logger.error(
                     {
                         "send_broadcast": {
                             "status": "failed",
@@ -302,7 +299,7 @@ class Connection:
                     }
                 )
             if not binary:
-                self.log(
+                logger.info(
                     {
                         "send_broadcast": {
                             "status": "complete",
@@ -316,17 +313,16 @@ class Connection:
     def _parse_gid(__gid, gid_type, print_message=True):
         try:
             if __gid > goTenna.constants.GID_MAX:
-                print(
-                    "{} is not a valid GID. The maximum GID is {}".format(
-                        str(__gid), str(goTenna.constants.GID_MAX)
-                    )
+                logger.error(
+                    f"{str(__gid)} is not a valid GID. The maximum GID is "
+                    f"{str(goTenna.constants.GID_MAX)}"
                 )
                 return None, __gid
             gidobj = goTenna.settings.GID(__gid, gid_type)
             return gidobj, None
         except ValueError:
             if print_message:
-                print("{} is not a valid GID.".format(__gid))
+                logger.error(f"{__gid} is not a valid GID.")
             return None, None
 
     @rate_dec(private=True)
@@ -336,7 +332,7 @@ class Connection:
         """
         _gid, rest = self._parse_gid(gid, goTenna.settings.GID.PRIVATE)
         if not self.api_thread.connected:
-            print("Must connect first")
+            logger.warning("Must connect first")
             return
         if not _gid:
             return
@@ -344,7 +340,7 @@ class Connection:
         def error_handler(details):
             """ Special error handler for sending private messages to format errors
             """
-            return "Error sending message: {}".format(details)
+            return f"Error sending message: {details}"
 
         try:
             if binary:
@@ -356,9 +352,9 @@ class Connection:
 
             def ack_callback(correlation_id, success):
                 if not success:
-                    print(
-                        "Private message to {}: delivery not confirmed, recipient may"
-                        " be offline or out of range".format(_gid.gid_val)
+                    logger.error(
+                        f"Private message to {_gid.gid_val}: delivery not confirmed,"
+                        f"recipient may be offline or out of range"
                     )
 
             corr_id = self.api_thread.send_private(
@@ -370,17 +366,20 @@ class Connection:
                 encrypt=False,
             )
         except ValueError:
-            print("Message too long!")
+            logger.error("Message too long!")
             return
-        # self.in_flight_events[corr_id.bytes] = f"Private message to {_gid.gid_val}: {message}"
-        cprint(f"Sent {naturalsize(len(message))}", "magenta")
+        self.in_flight_events[
+            corr_id.bytes
+        ] = f"Private message to {_gid.gid_val}: {message}"
+        digest = sha256(message).hexdigest()
+        logger.info(colored(f"Sent {naturalsize(len(message))} - {digest}", "magenta"))
 
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
         msg_segments = segment(message, segment_size)
-        self.log(f"Created segmented message with {len(msg_segments)} segments")
+        logger.info(f"Created segmented message with {len(msg_segments)} segments")
         # extra sanity check that we don't relay messages larger than ~1 KB
         if len(msg_segments) > 12:
-            print(
+            logger.info(
                 f"Message of {len(msg_segments)} segments too long for jumbo send. "
                 f"Not sending"
             )
@@ -391,7 +390,7 @@ class Connection:
                 i += 1
                 sleep(2)
                 self.send_broadcast(msg)
-                # self.log(f"Sent message segment {i} of {len(msg_segments)}")
+                # logger.info(f"Sent message segment {i} of {len(msg_segments)}")
         return
         # disabled for now as requires custom message parsing
         # TODO: enable private messages here
@@ -404,7 +403,7 @@ class Connection:
 
     def get_device_type(self):
         device = self.api_thread.device_type
-        self.log(device)
+        logger.info(device)
         return device
 
     @staticmethod
@@ -418,15 +417,15 @@ class Connection:
         Allowed region displayed with list_geo_region.
         """
         if self.get_device_type() == "pro":
-            self.log("This configuration cannot be done for Pro devices.")
+            logger.error("This configuration cannot be done for Pro devices.")
             return
         if not goTenna.constants.GEO_REGION.valid(region):
-            self.log("Invalid region setting {}".format(region))
+            logger.error("Invalid region setting {}".format(region))
             return
         self._set_geo_region = True
         self._settings.geo_settings.region = region
         self.api_thread.set_geo_settings(self._settings.geo_settings)
-        self.log(f"GEO_REGION: {self.api_thread.geo_settings.region}")
+        logger.info(f"GEO_REGION: {self.api_thread.geo_settings.region}")
 
     def can_connect(self):
         """ Return whether a goTenna can connect.
@@ -453,22 +452,16 @@ class Connection:
             result["MESH - Geo region"] = "OK"
         else:
             result["MESH - Geo region"] = "Not Set"
-        self.log(result)
+        logger.info(result)
         return result
 
     def get_system_info(self):
         """ Get system information.
         """
         if not self.api_thread.connected:
-            self.log("Device must be connected")
+            logger.info("Device must be connected")
             return
         info = {"SYSTEM_INFO": self.api_thread.system_info}
-        self.log(info)
+        logger.info(info)
         return info
 
-    def log(self, message):
-        if self.cli:
-            pprint(message)
-        else:
-            name = "{0: <16}".format(f"[{self.name}]")
-            logger.debug(f"{name} {message}")

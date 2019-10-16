@@ -1,3 +1,4 @@
+import logging
 import os
 from os.path import expanduser
 
@@ -8,13 +9,16 @@ from sqlalchemy.sql import select
 from utilities import get_id_addr_port
 
 
+logger = logging.getLogger('database')
+
+
 def get_db():
     """Get an existing C-Lightning DB path
     """
     home = expanduser("~")
     db_path = home + "/.lightning/"
     if not os.path.exists(db_path):
-        print(f"Database path {db_path} not found!")
+        logger.error(f"Database path {db_path} not found!")
     return db_path
 
 

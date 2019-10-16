@@ -1,10 +1,12 @@
+import logging
 import threading
 import types
 from collections import namedtuple
+from hashlib import sha256
 from time import sleep, time
 
 from goTenna.payload import BinaryPayload, CustomPayload
-from termcolor import cprint
+from termcolor import colored
 
 from config import VALID_MSGS
 from utilities import de_segment, naturalsize, hexdump
@@ -44,7 +46,7 @@ def handle_jumbo_message(conn, message):
     """
     payload = message.payload.message
     # TODO: this cuts out all sender and receiver info -- ADD SENDER GID
-    conn.log(f"Received jumbo message fragment")
+    logger.info(f"Received jumbo message fragment")
     prefix, seq, length, msg = payload.split("/")
 
     # if a jumbo monitor thread is not running, start one
@@ -63,11 +65,11 @@ def handle_jumbo_message(conn, message):
 
 
 def monitor_jumbo_msgs(conn, timeout=210):
-    conn.log("Starting jumbo message monitor thread")
+    logger.debug("Starting jumbo message monitor thread")
     start = time()
     missing = True
     while True and time() < start + timeout:
-        # conn.log(
+        # logger.info(
         #     f"received: {len(conn.events.jumbo)} of {conn.events.jumbo_len} "
         #     f"jumbo messages"
         # )
@@ -82,14 +84,14 @@ def monitor_jumbo_msgs(conn, timeout=210):
             # reconstruct the jumbo message
             jumbo_message.payload.message = de_segment(conn.events.jumbo)
             # send it back through handle_message
-            conn.log(f"Jumbo message payload reconstituted")
+            logger.info(f"Jumbo message payload reconstituted")
             handle_message(conn, jumbo_message)
             break
         sleep(0.2)
     # reset jumbo events after timeout
     conn.events.init_jumbo()
     if missing:
-        conn.log(
+        logger.error(
             "Did not receive all jumbo messages require for re-assembly. "
             "Please request the message again from the remote host."
         )
