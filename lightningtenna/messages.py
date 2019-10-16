@@ -12,33 +12,46 @@ from config import VALID_MSGS
 from utilities import de_segment, naturalsize, hexdump
 
 
-def handle_message(conn, message):
+logger = logging.getLogger('msg_handler')
+
+
+def handle_message(conn, queue):
     """
     Handle messages received over the mesh network
     :param conn: the lntenna.gotenna.Connection instance
-    :param message: as strings
+    :param queue: a queue.Queue() containing messages
     :return: result of message handling
     """
-    if isinstance(message.payload, CustomPayload):
-        print(message)
-    elif isinstance(message.payload, BinaryPayload):
-        payload = message.payload._binary_data
-        conn.bytes_received += len(payload)
-        cprint(f"Received {naturalsize(len(payload))}", "cyan")
-        # hexdump(payload, recv=True)
-        if not payload[0:4] in VALID_MSGS:
-            print("Message magic not found in VALID_MSGS. Discarding message")
-            return
-        conn.events.send_via_socket.put(payload[4:])
-    else:
-        payload = message.payload.message
-        # test for jumbo:
-        jumbo = True if payload.startswith("sm/") else False
-        if jumbo:
-            handle_jumbo_message(conn, message)
-            return
+    while True:
+        if queue.empty():
+            sleep(0.15)
         else:
-            print(payload)
+            message = queue.get().message
+
+            if isinstance(message.payload, CustomPayload):
+                print(message)
+            elif isinstance(message.payload, BinaryPayload):
+                payload = message.payload._binary_data
+                digest = sha256(payload).hexdigest()
+                conn.bytes_received += len(payload)
+                # cprint(f"Received {naturalsize(len(payload))} - {digest}", "cyan")
+                logger.info(colored(f"Received {naturalsize(len(payload))} - {digest}", "cyan"))
+                # hexdump(payload, recv=True)
+                if not payload[0:4] in VALID_MSGS:
+                    # print("Message magic not found in VALID_MSGS. Discarding message")
+                    logger.error("Message magic not found in VALID_MSGS. Discarding message")
+                    return
+                conn.events.send_via_socket.put(payload[4:])
+            else:
+                payload = message.payload.message
+                # test for jumbo:
+                jumbo = True if payload.startswith("sm/") else False
+                if jumbo:
+                    handle_jumbo_message(conn, message)
+                    return
+                else:
+                    logger.error("Unhandled payload type received:")
+                    logger.error(payload)
 
 
 def handle_jumbo_message(conn, message):
