@@ -274,11 +274,15 @@ async def chunk_to_list(data, chunk_len):
         yield (b"ltng" + data[i : i + chunk_len])
 
 
-def get_id_addr_port():
+def get_id_addr_port(peer_len):
     """Ask the user for peer, IP address and port to modify as gateway
     """
-    to_modify = input("Enter 'id' (number) of the gateway ('c' to cancel/skip): ")
-    if to_modify == "c":
+    to_modify = input("Enter 'id' (number) of the REMOTE lightning channel to proxy "
+                      "(any other key to skip): ")
+    try:
+        if int(to_modify) <= peer_len:
+            pass
+    except ValueError:
         return
     while True:
         address = (

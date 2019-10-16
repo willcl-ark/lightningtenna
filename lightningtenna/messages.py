@@ -8,11 +8,11 @@ from time import sleep, time
 from goTenna.payload import BinaryPayload, CustomPayload
 from termcolor import colored
 
-from config import VALID_MSGS
+import config
 from utilities import de_segment, naturalsize
 
 
-logger = logging.getLogger('MSGS')
+logger = logging.getLogger("MSGS")
 mesh_logger = logging.getLogger("MESH")
 
 
@@ -35,9 +35,20 @@ def handle_message(conn, queue):
                 payload = message.payload._binary_data
                 digest = sha256(payload).hexdigest()
                 conn.bytes_received += len(payload)
-                mesh_logger.info(colored(f"Received {naturalsize(len(payload))} - {digest}", "cyan"))
-                if not payload[0:4] in VALID_MSGS:
-                    logger.error("Message magic not found in VALID_MSGS. Discarding message")
+                if config.DEBUG:
+                    mesh_logger.info(
+                        colored(
+                            f"Received {naturalsize(len(payload))} - {digest}", "cyan"
+                        )
+                    )
+                else:
+                    mesh_logger.info(
+                        colored(f"Received {naturalsize(len(payload))}", "cyan")
+                    )
+                if not payload[0:4] in config.VALID_MSGS:
+                    logger.error(
+                        "Message magic not found in VALID_MSGS. Discarding message"
+                    )
                     return
                 conn.events.send_via_socket.put(payload[4:])
             else:

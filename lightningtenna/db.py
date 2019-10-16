@@ -48,6 +48,7 @@ def list_peers():
         for row in peer_list:
             print(f"\n{row}")
         print("\n")
+    return len(peer_list)
 
 
 def modify_peer():
@@ -55,10 +56,10 @@ def modify_peer():
     """
     # TODO: we should save existing values first, so that we can restore them
     #   afterwards.
-    list_peers()
+    peer_len = list_peers()
 
     try:
-        to_modify, address, port = utilities.get_id_addr_port()
+        to_modify, address, port = utilities.get_id_addr_port(peer_len)
     except TypeError:
         return
 

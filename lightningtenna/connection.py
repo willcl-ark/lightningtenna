@@ -7,6 +7,7 @@ from time import sleep
 import goTenna
 from termcolor import colored
 
+import config
 import events
 import messages
 import utilities
@@ -285,7 +286,10 @@ class Connection:
                     corr_id.bytes
                 ] = f"Broadcast message: {message} ({len(message)} bytes)\n"
                 self.bytes_sent += len(message)
-                logger.info(f"Sent {colored(utilities.naturalsize(len(message)), 'magenta')}")
+                logger.info(
+                    f"Sent {colored(utilities.naturalsize(len(message)), 'magenta')}"
+                )
+
                 if binary:
                     # utilities.hexdump(message, send=True)
                     ...
@@ -372,7 +376,16 @@ class Connection:
             corr_id.bytes
         ] = f"Private message to {_gid.gid_val}: {message}"
         digest = sha256(message).hexdigest()
-        logger.info(colored(f"Sent {utilities.naturalsize(len(message))} - {digest}", "magenta"))
+        if config.DEBUG:
+            logger.info(
+                colored(
+                    f"Sent {utilities.naturalsize(len(message))} - {digest}", "magenta"
+                )
+            )
+        else:
+            logger.info(
+                colored(f"Sent {utilities.naturalsize(len(message))}", "magenta")
+            )
         utilities.hexdump(message, send=True)
 
     def send_jumbo(self, message, segment_size=210, private=False, gid=None):
@@ -465,4 +478,3 @@ class Connection:
         info = {"SYSTEM_INFO": self.api_thread.system_info}
         logger.info(info)
         return info
-

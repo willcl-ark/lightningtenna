@@ -129,6 +129,7 @@ send_to_trio, receive_from_thread = trio.open_memory_channel(50)
 if __name__ == "__main__":
     arguments = docopt(__doc__)
     if arguments["--debug"]:
+        config.DEBUG = True
         config.debug_logging()
     if arguments["--uber"]:
         config.UBER = True
