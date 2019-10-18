@@ -79,7 +79,7 @@ cli/lightning-cli connect 032bced86b432c62e89e02e67d460e1765a14b9701b247f9614aa6
 open a channel with remote node, replace amount (in satoshis) if you like. leave word urgent for faster confirmations.
 
 ```shell script
-cli/lightning-cli fundchannel 038edc7b1838126909859d2311dfea52503ccedc7508a42dd3d962a512086909b8 1000000 urgent
+cli/lightning-cli fundchannel 032bced86b432c62e89e02e67d460e1765a14b9701b247f9614aa6ebc4f085151a 1000000 urgent
 ```
 
 wait for channel confirmation. 1 Block on testnet. to check:
