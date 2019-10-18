@@ -25,6 +25,7 @@ make
 create c-lightning conf file
 
 ```shell script
+mkdir ~/.lightning
 touch ~/.lighting/config
 # use your favourite editor!
 vim ~/.lightning/config
@@ -50,7 +51,9 @@ start lighting
 lightningd/lightningd
 ```
 
-enable gossip
+Open a new terminal window and switch to it.
+
+Enable gossip
 
 ```shell script
 cli/lightning-cli dev-suppress-gossip
@@ -63,11 +66,14 @@ cli/lightning-cli newaddr
 ```
 
 fund that address with testnet coins
+If you need testnet coins, ask us and we can give you some. Paste your address into:
+[qrcode.me](http://goqr.me)
+
 
 connect to remote node
 
 ```shell script
-cli/lighting-cli connect 038edc7b1838126909859d2311dfea52503ccedc7508a42dd3d962a512086909b8@77.98.116.8:9734
+cli/lightning-cli connect 032bced86b432c62e89e02e67d460e1765a14b9701b247f9614aa6ebc4f085151a@77.98.116.8:9733
 ```
 
 open a channel with remote node, replace amount (in satoshis) if you like. leave word urgent for faster confirmations.
