@@ -94,7 +94,7 @@ wait for channel confirmation. 1 Block on testnet. to check:
 cli/lightning-cli listfunds
 ```
 
-stop c-lightning
+wait for gossip levels to settle down (watch terminal) and stop c-lightning
 
 ```shell script
 cli/lightning-cli stop
@@ -110,8 +110,35 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Follow lightningtenna setup instructions from # 4:
+Modify the values in `lightningtenna/example_config.ini` before first start.
+Be sure to use the following values in the lightning section:
 
-[Lightningtenna setup instructions](https://github.com/willcl-ark/lightningtenna/blob/master/README.md)
+[lightning]
+REMOTE_HOST=77.98.116.8
+REMOTE_PORT=9733
+
+## MESH 
+Run the mesh client:
+
+```shell script
+python lightningtenna.py --mesh
+```
+
+Follow the prompts to choose a channel to proxy through the mesh.
+Next connect and power on the gotenna.
+
+When a GATEWAY is also active, mesh can run the script in a new terminal:
+
+```shell script
+python testpay.py
+```
+
+## GATEWAY
+Run the gateway client:
+
+```shell script
+python lightingtenna.py --gateway
+```
+
 
 
