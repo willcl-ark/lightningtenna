@@ -30,8 +30,14 @@ log-level=io
     
     1) MESH works best with additional patches, found in this fork: [v0.7.3rc2_mesh](https://github.com/willcl-ark/lightning/commits/v0.7.3rc2_mesh)
     
+    ```
+    git clone https://github.com/willcl-ark/lightningtenna.git
+    git checkout v0.7.3rc2_mesh
+    ```
 
-1) Both instances of C-Lightning should be ./configured using `--enable-developer` flag in order to permit the `lightning-cli dev-suppress-gossip` command.
+1) Both instances of C-Lightning should be configured using "--enable-developer" flag in order to permit the "lightning-cli dev-suppress-gossip" command:
+
+    `./configure --enable-developer`
 
 1) Before first start, modify the values in example_config.ini as appropriate.
 
@@ -39,7 +45,9 @@ log-level=io
 
 1) On MESH, ensure C-Lightning is not running.
 
-1) On REMOTE start C-Lightning. Issue RPC command: `lightning-cli dev-suppress-gossip`
+1) On REMOTE start C-Lightning. Issue RPC command:
+
+    `lightning-cli dev-suppress-gossip`
 
 1) On MESH, start the python mesh client: `python lightningtenna.py --mesh`, follow the prompts, then power on goTenna (a) and await connection messages.
 
