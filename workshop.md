@@ -8,14 +8,19 @@ git clone https://github.com/willcl-ark/lightning.git
 cd lightning
 git pull --all
 git fetch --all --tags
-git checkout origin/v0.7.3.2rc2_mesh
+```
+
+Follow commands to get DEPENDENCIES for your architecture. Don't `./configure` or `make` yet!:
+
+[build c-lightning](https://github.com/ElementsProject/lightning/blob/master/doc/INSTALL.md)
+
+```shell script
+git checkout origin/v0.7.3rc2_mesh
 ./configure --enable-developer
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
 make
 ```
-create conf file
+
+create c-lightning conf file
 
 ```shell script
 touch ~/.lighting/config
@@ -49,12 +54,6 @@ enable gossip
 cli/lightning-cli dev-suppress-gossip
 ```
 
-connect to remote node
-
-```shell script
-cli/lighting-cli connect 038edc7b1838126909859d2311dfea52503ccedc7508a42dd3d962a512086909b8@77.98.116.8:9734
-```
-
 get a new funding address
 
 ```shell script
@@ -62,6 +61,12 @@ cli/lightning-cli newaddr
 ```
 
 fund that address with testnet coins
+
+connect to remote node
+
+```shell script
+cli/lighting-cli connect 038edc7b1838126909859d2311dfea52503ccedc7508a42dd3d962a512086909b8@77.98.116.8:9734
+```
 
 open a channel with remote node, replace amount (in satoshis) if you like. leave word urgent for faster confirmations.
 
@@ -81,5 +86,18 @@ stop c-lightning
 cli/lightning-cli stop
 ```
 
+Open a new terminal window. Clone lightningtenna and install requirements:
+
+```shell script
+git clone https://github.com/willcl-ark/lightningtenna.git
+cd lightningtenna
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Follow lightningtenna setup instructions from # 4:
+
+[Lightningtenna setup instructions](https://github.com/willcl-ark/lightningtenna/blob/master/README.md)
 
 
