@@ -3,6 +3,8 @@
 ### Pre-requisites
 * Python >-=3.7
 
+Get Will Clark's fork of C-Lightning:
+
 ```shell script
 git clone https://github.com/willcl-ark/lightning.git
 cd lightning
@@ -10,9 +12,9 @@ git pull --all
 git fetch --all --tags
 ```
 
-Follow commands to get DEPENDENCIES for your architecture. Don't `./configure` or `make` yet!:
+Follow commands to compile C-Lightning for your architecture. Stop at `./configure`:
 
-[build c-lightning](https://github.com/ElementsProject/lightning/blob/master/doc/INSTALL.md)
+[Compile C-Lightning](https://github.com/ElementsProject/lightning/blob/master/doc/INSTALL.md)
 
 ```shell script
 git checkout origin/v0.7.3rc2_mesh
