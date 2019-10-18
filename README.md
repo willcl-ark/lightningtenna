@@ -26,13 +26,9 @@ log-level=io
 
 1) C-Lightning setup:
 
-    1) Must be at commit [v0.7.3rc1](https://github.com/ElementsProject/lightning/tree/v0.7.3rc1) on MESH and GATEWAY
+    1) REMOTE must be at commit [v0.7.3rc2](https://github.com/ElementsProject/lightning/tree/v0.7.3rc2)
     
-    1) Apply the following changes to source code before compiling: 
-    
-        MESH only: [Increase HTLC Timeout](https://github.com/willcl-ark/lightning/commit/334b285fb2a9cfa9a783e670de3500779bbc1b2e) 
-        
-        MESH and GATEWAY [Fully Suppress Gossip](https://github.com/willcl-ark/lightning/commit/3ee42f625e76a38aa659354a26a5321d655fb679)
+    1) MESH works best with additional patches, found in this fork: [v0.7.3rc2_mesh](https://github.com/willcl-ark/lightning/commits/v0.7.3rc2_mesh)
     
 
 1) Both instances of C-Lightning should be ./configured using `--enable-developer` flag in order to permit the `lightning-cli dev-suppress-gossip` command.
@@ -52,7 +48,5 @@ log-level=io
 1) On MESH start C-Lightning.
 
 1) Watch them communicate via mesh network proxy.
-
-    N.B: Only mesh transmissions will be hexdumped to the terminal output. 
 
 1) Pay an invoice. If testing, you can use `python testpay.py` to grab a testnet blockstream satellite invoice and try to pay it using Lighting-rpc.
