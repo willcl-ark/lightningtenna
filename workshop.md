@@ -6,8 +6,9 @@
 ```shell script
 git clone https://github.com/willcl-ark/lightning.git
 cd lightning
+git pull --all
 git fetch --all --tags
-git checkout v0.7.3.2rc2_mesh
+git checkout origin/v0.7.3.2rc2_mesh
 ./configure --enable-developer
 make
 ```
@@ -37,4 +38,44 @@ start lighting
 ```shell script
 lightningd/lightningd
 ```
+
+enable gossip
+
+```shell script
+cli/lightning-cli dev-suppress-gossip
+```
+
+connect to remote node
+
+```shell script
+cli/lighting-cli connect 038edc7b1838126909859d2311dfea52503ccedc7508a42dd3d962a512086909b8@77.98.116.8:9734
+```
+
+get a new funding address
+
+```shell script
+cli/lightning-cli newaddr
+```
+
+fund that address with testnet coins
+
+open a channel with remote node, replace amount (in satoshis) if you like. leave word urgent for faster confirmations.
+
+```shell script
+cli/lightning-cli fundchannel 038edc7b1838126909859d2311dfea52503ccedc7508a42dd3d962a512086909b8 1000000 urgent
+```
+
+wait for channel confirmation. 1 Block on testnet. to check:
+
+```shell script
+cli/lightning-cli listfunds
+```
+
+stop c-lightning
+
+```shell script
+cli/lightning-cli stop
+```
+
+
 
