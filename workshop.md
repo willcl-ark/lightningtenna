@@ -59,6 +59,13 @@ Enable gossip
 cli/lightning-cli dev-suppress-gossip
 ```
 
+connect to blockstream for gossip, and remote node
+
+```shell script
+cli/lightning-cli connect 039d2201586141a3fff708067aa270aa4f6a724227d5740254d4e34da262a79c2a@34.83.166.97:9735
+cli/lightning-cli connect 032bced86b432c62e89e02e67d460e1765a14b9701b247f9614aa6ebc4f085151a@77.98.116.8:9733
+```
+
 get a new funding address
 
 ```shell script
@@ -69,11 +76,10 @@ fund that address with testnet coins
 If you need testnet coins, ask us and we can give you some. Paste your address into:
 [qrcode.me](http://goqr.me)
 
-
-connect to remote node
+you can check watch for the funds arriving with:
 
 ```shell script
-cli/lightning-cli connect 032bced86b432c62e89e02e67d460e1765a14b9701b247f9614aa6ebc4f085151a@77.98.116.8:9733
+watch -n 5 cli/lightning-cli listfunds
 ```
 
 open a channel with remote node, replace amount (in satoshis) if you like. leave word urgent for faster confirmations.
