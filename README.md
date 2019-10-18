@@ -39,6 +39,10 @@ log-level=io
 
     `./configure --enable-developer`
 
+1) Make C-Lightning
+
+    `make`
+
 1) Before first start, modify the values in example_config.ini as appropriate.
 
 1) MESH should ideally have a single peer and single channel open in C-Lightning.
