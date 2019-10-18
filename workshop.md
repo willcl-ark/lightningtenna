@@ -10,12 +10,16 @@ git pull --all
 git fetch --all --tags
 git checkout origin/v0.7.3.2rc2_mesh
 ./configure --enable-developer
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 make
 ```
 create conf file
 
 ```shell script
 touch ~/.lighting/config
+# use your favourite editor!
 vim ~/.lightning/config
 ```
 
