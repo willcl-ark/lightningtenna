@@ -22,7 +22,7 @@ def get_blocksat_invoice():
     print("Sending a message via the Blockstream Satellite service:")
     print(f'"{msg}"')
     print(f"\nSHA256 message digest:")
-    print(colored(sha256(msg.encode()).hexdigest(), 'magenta'))
+    print(colored(sha256(msg.encode()).hexdigest(), "magenta"))
     invoice = blocksat.place(msg, 10000, blocksat.TESTNET_SATELLITE_API)
     if invoice.status_code == 200:
         print("\nGot lightning invoice!")
@@ -46,7 +46,25 @@ def pay_by_route(timeout=500):
     if invoice:
         decoded = l1.decodepay(invoice)
         print("Decoded payment request")
-        route = l1.getroute(decoded["payee"], decoded["msatoshi"], 0)["route"]
+        # route = l1.getroute(decoded["payee"], decoded["msatoshi"], 0)["route"]
+        route = [
+            {
+                "id": "032bced86b432c62e89e02e67d460e1765a14b9701b247f9614aa6ebc4f085151a",
+                "channel": "1583101x187x1",
+                "direction": 1,
+                "msatoshi": 10001,
+                "amount_msat": 10001,
+                "delay": 15,
+            },
+            {
+                "id": "039d2201586141a3fff708067aa270aa4f6a724227d5740254d4e34da262a79c2a",
+                "channel": "1579538x76x1",
+                "direction": 0,
+                "msatoshi": 10000,
+                "amount_msat": 10000,
+                "delay": 9,
+            },
+        ]
         # print("Got a route")
         print("Sending lightning HTLC via the mesh...")
         # print(f"lightning-cli sendpay {route} {decoded['payment_hash']}")
@@ -55,9 +73,11 @@ def pay_by_route(timeout=500):
         time.sleep(2)
         print(f"lightning-cli waitsendpay {decoded['payment_hash']} {timeout}")
         result = l1.waitsendpay(decoded["payment_hash"], timeout)
-        print(colored("\nComplete! Invoice payment accepted.\n", 'green'))
+        print(colored("\nComplete! Invoice payment accepted.\n", "green"))
         print(f"Message sent: {colored(message, 'magenta')}")
-        print(f"Payment preimage:\n{colored(result['payment_preimage'], 'yellow', attrs=['bold'])}")
+        print(
+            f"Payment preimage:\n{colored(result['payment_preimage'], 'yellow', attrs=['bold'])}"
+        )
         # print(f"msatoshi sent: {result['msatoshi_sent']}")
     else:
         return
