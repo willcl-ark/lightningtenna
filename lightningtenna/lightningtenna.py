@@ -116,7 +116,7 @@ async def main(args):
     # set up the mesh connection and pass it memory channels
     # shared between all connections to the server
     mesh_connection = gotenna_connections.setup_gotenna_conn(
-        f"{name}|MESH", send_to_trio.clone(), receive_from_trio.clone(), gid
+        f"{name}|MESH", gateway, send_to_trio.clone(), receive_from_trio.clone()
     )
 
     async with trio.open_nursery() as nursery:
