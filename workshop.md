@@ -43,6 +43,7 @@ bitcoin-rpcconnect=95.211.225.220
 bind-addr=0.0.0.0:9734
 autolisten=False
 log-level=debug
+rescan=3
 ```
 
 start lighting
