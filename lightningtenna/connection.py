@@ -1,8 +1,8 @@
 import logging
+import time
 import threading
 import traceback
 from hashlib import sha256
-from time import sleep
 
 import goTenna
 from termcolor import colored
@@ -114,6 +114,7 @@ class Connection:
                 logger.info("Device reconnected! Firmware update complete!")
                 self._awaiting_disconnect_after_fw_update[0] = False
             else:
+                config.START = time.time()
                 logger.info("Connected!")
         elif evt.event_type == goTenna.driver.Event.DISCONNECT:
             self.events.disconnect.put(evt)
@@ -279,7 +280,7 @@ class Connection:
                 corr_id = self.api_thread.send_broadcast(payload, method_callback)
                 while corr_id is None:
                     # try again if send_broadcast fails
-                    sleep(10)
+                    time.sleep(10)
                     corr_id = self.api_thread.send_broadcast(payload, method_callback)
 
                 self.in_flight_events[
@@ -402,7 +403,7 @@ class Connection:
             i = 0
             for msg in msg_segments:
                 i += 1
-                sleep(2)
+                time.sleep(2)
                 self.send_broadcast(msg)
                 # logger.info(f"Sent message utilities.segment {i} of {len(msg_segments)}")
         return
