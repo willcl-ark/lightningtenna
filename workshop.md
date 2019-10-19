@@ -126,10 +126,10 @@ Run the mesh client:
 python lightningtenna.py --mesh
 ```
 
-Follow the prompts to choose a channel to proxy through the mesh.
+Follow the prompts to choose a channel to proxy through the mesh. Note, the ip address will not be restored automatically afterwards.
 Next connect and power on the gotenna.
 
-When a GATEWAY is also active, mesh can run the script in a new terminal:
+When a GATEWAY is also active, mesh can run the script in a new terminal to request a blocksat invoice (for a random message) over clearnet, and pay via lightning where the HTLCs are propagated directly through the mesh connection:
 
 ```shell script
 python testpay.py
