@@ -1,7 +1,7 @@
 # Workshop
 
 ### Pre-requisites
-* Python >-=3.7
+* Python >-=3.6
 
 Get Will Clark's fork of C-Lightning:
 
@@ -111,12 +111,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Modify the values in `lightningtenna/example_config.ini` before first start.
-Be sure to use the following values in the lightning section:
+Ubuntu users might also try the following:
 
-[lightning]
-REMOTE_HOST=77.98.116.8
-REMOTE_PORT=9733
+```shell script
+wget https://raw.githubusercontent.com/gotenna/PublicSDK/master/python-public-sdk/77-gotenna.rules
+cp 77-gotenna.rules /etc/udev/rules.d/
+udevadm control --reload
+```
 
 ## MESH 
 Run the mesh client:
@@ -138,7 +139,7 @@ python testpay.py
 Run the gateway client:
 
 ```shell script
-python lightingtenna.py --gateway
+python lightningtenna.py --gateway
 ```
 
 

@@ -15,6 +15,9 @@ UBER = False
 DEBUG = False
 START = None
 
+min_GID = 10000000
+max_GID = 999999999
+
 # logging
 LOG_FILENAME = f"{config_path}lightningtenna.log"
 

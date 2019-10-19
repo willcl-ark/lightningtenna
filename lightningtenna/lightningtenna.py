@@ -13,6 +13,7 @@ Options:
 """
 import logging
 from itertools import count
+import random
 
 import trio
 from docopt import docopt
@@ -32,7 +33,7 @@ REMOTE_PORT = int(cnf["lightning"]["REMOTE_PORT"])
 CONNECTION_COUNTER = count()
 
 
-logger = logging.getLogger('SERVER')
+logger = logging.getLogger("SERVER")
 
 
 async def sender(args):
@@ -96,14 +97,26 @@ async def main(args):
     gateway = args[0]
     name = "GATEWAY" if gateway else "MESH"
     if gateway:
-        gid = int(cnf["gotenna"]["MESH_GID"])
+        gid = int(
+            cnf.get(
+                "gotenna",
+                "MESH_GID",
+                # fallback=random.randint(config.min_GID, config.max_GID),
+            )
+        )
     else:
-        gid = int(cnf["gotenna"]["GATEWAY_GID"])
+        gid = int(
+            cnf.get(
+                "gotenna",
+                "GATEWAY_GID",
+                # fallback=random.randint(config.min_GID, config.max_GID),
+            )
+        )
 
     # set up the mesh connection and pass it memory channels
     # shared between all connections to the server
     mesh_connection = gotenna_connections.setup_gotenna_conn(
-        f"{name}|MESH", gateway, send_to_trio.clone(), receive_from_trio.clone()
+        f"{name}|MESH", send_to_trio.clone(), receive_from_trio.clone(), gid
     )
 
     async with trio.open_nursery() as nursery:
