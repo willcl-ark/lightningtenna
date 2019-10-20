@@ -46,6 +46,7 @@ def pay_by_route(timeout=500):
     if invoice:
         decoded = l1.decodepay(invoice)
         print("Decoded payment request")
+        input("Press any key to pay invoice via mesh proxy")
         # route = l1.getroute(decoded["payee"], decoded["msatoshi"], 0)["route"]
         route = [
             {
@@ -66,7 +67,7 @@ def pay_by_route(timeout=500):
             },
         ]
         # print("Got a route")
-        print("Sending lightning HTLC via the mesh...")
+        print("Sending HTLC via the mesh...")
         # print(f"lightning-cli sendpay {route} {decoded['payment_hash']}")
         l1.sendpay(route, decoded["payment_hash"])
         print("Sent to mesh successfully. Waiting for response...")

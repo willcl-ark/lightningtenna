@@ -142,5 +142,14 @@ Run the gateway client:
 python lightningtenna.py --gateway
 ```
 
+## Test a payment
+
+To run a payment, you can run the testpay script. This will request an invoice from blockstream API, and then attempt to pay the invoice
+using a pre-defined path (via 032bced86b432c62e89e02e67d460e1765a14b9701b247f9614aa6ebc4f085151a)
+
+```shell script
+python testpay.py
+```
+
 
 

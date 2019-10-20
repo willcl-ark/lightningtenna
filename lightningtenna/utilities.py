@@ -114,36 +114,36 @@ def rate_dec(private=False):
 
         @functools.wraps(func)
         def limit(*args, **kwargs):
-            # # how many can we send per minute
-            # if not config.UBER:
-            #     per_min = 12
-            # else:
-            #     per_min = 5 if not private else 999
-            # min_interval = 0.5
-            #
-            # # add this send time to the list
-            # config.SEND_TIMES.append(time.time())
-            #
-            # # if we've not sent before, send!
-            # if len(config.SEND_TIMES) <= 1:
-            #     pass
-            #
-            # # if we've not sent 'per_min' in total, sleep & send!
-            # elif len(config.SEND_TIMES) < per_min + 1:
-            #     time.sleep(min_interval)
-            #     pass
-            #
-            # # if our 'per_min'-th oldest is older than 'per_min' secs ago, go!
-            # elif config.SEND_TIMES[-(per_min + 1)] < (time.time() - 60):
-            #     time.sleep(min_interval)
-            #     pass
-            #
-            # # wait the required time
-            # else:
-            #     wait = int(60 - (time.time() - config.SEND_TIMES[-(per_min + 1)])) + 1
-            #     print_timer(wait)
+            # how many can we send per minute
+            if not config.UBER:
+                per_min = 12
+            else:
+                per_min = 5 if not private else 10
+            min_interval = 2
 
-            time.sleep(12)
+            # add this send time to the list
+            config.SEND_TIMES.append(time.time())
+
+            # if we've not sent before, send!
+            if len(config.SEND_TIMES) <= 1:
+                pass
+
+            # if we've not sent 'per_min' in total, sleep & send!
+            elif len(config.SEND_TIMES) < per_min + 1:
+                time.sleep(min_interval)
+                pass
+
+            # if our 'per_min'-th oldest is older than 'per_min' secs ago, go!
+            elif config.SEND_TIMES[-(per_min + 1)] < (time.time() - 60):
+                time.sleep(min_interval)
+                pass
+
+            # wait the required time
+            else:
+                wait = int(60 - (time.time() - config.SEND_TIMES[-(per_min + 1)])) + 1
+                print_timer(wait)
+
+            # time.sleep(12)
             # execute the send
             return func(*args, **kwargs)
 
